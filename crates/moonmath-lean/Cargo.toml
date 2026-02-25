@@ -1,0 +1,10 @@
+[package]
+name = "moonmath-lean"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+moonmath-types = { path = "../moonmath-types" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "fs", "time"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }

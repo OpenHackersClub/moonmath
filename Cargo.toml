@@ -1,0 +1,81 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/moonmath-app",
+    "crates/moonmath-content",
+    "crates/moonmath-egui",
+    "crates/moonmath-math",
+    "crates/moonmath-ssg",
+    "crates/moonmath-viz",
+    "crates/moonmath-lean",
+    "crates/moonmath-types",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/debuggingfuture/moonmath"
+
+[workspace.dependencies]
+# Shared deps
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+thiserror = "2"
+http = "1.1"
+
+# Leptos ecosystem (all pinned to 0.7.8)
+leptos = { version = "0.7.8" }
+leptos_meta = { version = "0.7.8" }
+leptos_router = { version = "0.7.8" }
+leptos_axum = { version = "0.7.8" }
+
+# Server (Leptos 0.7 uses Axum 0.7)
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["fs"] }
+
+# Content pipeline
+pulldown-cmark = { version = "0.12", features = ["html"] }
+gray_matter = "0.2"
+
+# Math rendering
+katex = { version = "0.4", features = ["duktape"] }
+
+# WASM
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+gloo-net = { version = "0.6", features = ["http"] }
+send_wrapper = "0.6"
+web-sys = { version = "0.3", features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlCanvasElement",
+    "CanvasRenderingContext2d",
+] }
+
+# egui
+eframe = { version = "0.30", default-features = false }
+egui = "0.30"
+egui_plot = "0.30"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Testing
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.server-release]
+inherits = "release"
+opt-level = 3

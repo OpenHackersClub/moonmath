@@ -1,0 +1,84 @@
+[package]
+name = "moonmath-app"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+moonmath-types = { path = "../moonmath-types" }
+moonmath-content = { path = "../moonmath-content", optional = true, features = ["math-render"] }
+moonmath-math = { path = "../moonmath-math", optional = true }
+moonmath-lean = { path = "../moonmath-lean", optional = true }
+gray_matter = { workspace = true, optional = true }
+
+leptos = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
+leptos_axum = { workspace = true, optional = true }
+
+axum = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tower = { workspace = true, optional = true }
+tower-http = { workspace = true, optional = true }
+http = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+wasm-bindgen = { workspace = true }
+console_error_panic_hook = { workspace = true }
+web-sys = { workspace = true, optional = true }
+
+gloo-net = { workspace = true, optional = true }
+send_wrapper = { workspace = true }
+
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, optional = true }
+
+[features]
+hydrate = [
+    "leptos/hydrate",
+    "dep:gloo-net",
+    "dep:web-sys",
+]
+ssr = [
+    "dep:axum",
+    "dep:tokio",
+    "dep:tower",
+    "dep:tower-http",
+    "dep:leptos_axum",
+    "dep:moonmath-content",
+    "dep:moonmath-math",
+    "dep:gray_matter",
+    "dep:moonmath-lean",
+    "dep:tracing-subscriber",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]
+
+[dev-dependencies]
+reqwest = { workspace = true }
+
+[package.metadata.cargo-all-features]
+denylist = ["axum", "tokio", "tower", "tower-http", "leptos_axum"]
+skip_feature_sets = [["ssr", "hydrate"]]
+
+[package.metadata.leptos]
+output-name = "moonmath-app"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+style-file = "style/main.css"
+assets-dir = "public"
+site-addr = "127.0.0.1:3000"
+reload-port = 3001
+browserquery = "defaults"
+watch = false
+env = "DEV"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
+lib-profile-release = "wasm-release"

@@ -1,0 +1,9 @@
+[package]
+name = "moonmath-egui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+egui = { workspace = true }
+egui_plot = { workspace = true }
+moonmath-types = { path = "../moonmath-types" }

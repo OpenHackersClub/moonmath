@@ -1,0 +1,8 @@
+[package]
+name = "moonmath-viz"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+moonmath-types = { path = "../moonmath-types" }
+serde = { workspace = true }

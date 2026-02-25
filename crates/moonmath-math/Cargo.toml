@@ -1,0 +1,8 @@
+[package]
+name = "moonmath-math"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+katex = { workspace = true }
+thiserror = { workspace = true }

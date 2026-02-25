@@ -1,0 +1,16 @@
+[package]
+name = "moonmath-ssg"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "moonmath-ssg"
+path = "src/main.rs"
+
+[dependencies]
+moonmath-types = { path = "../moonmath-types" }
+moonmath-content = { path = "../moonmath-content", features = ["math-render"] }
+moonmath-math = { path = "../moonmath-math" }
+gray_matter = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
