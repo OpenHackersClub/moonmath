@@ -39,17 +39,30 @@ Every showcase page includes a Lean4 formalization of the theorem or a key lemma
   - **LaTeX** — downloadable `.tex` files and in-browser preview
   - **Typst** — downloadable `.typ` files and in-browser preview
 
+### 4. Immersive Mode
+
+Every showcase page links to a full-screen **Immersive Mode** that narrates the page's markdown content as a pure animation — no scrolling, no chrome, no clickable HTML widgets. The intent is a "reader's theatre" for mathematics: the proof unfolds on a canvas the way a teacher would draw it on a board.
+
+- **Entry point:** Each showcase page header carries an "Open in Immersive Mode" action (icon button, also bound to the `i` keyboard shortcut). Category and home pages may link directly to a category-level immersive playlist that runs through every premier page in order.
+- **URL pattern:** `/showcase/:category/:slug/immersive` (deep-linkable, shareable). A query string controls playback (`?t=<step>&speed=<rate>&reduced-motion=1`).
+- **Renderer:** `eframe` (egui via WASM) takes over the viewport. It is the *sole* renderer — no DOM math, no HTML overlays. KaTeX-rendered HTML from the static page is *not* reused; LaTeX is re-rendered into the egui scene as glyphs/paths so it can be animated, transformed, and highlighted as first-class scene objects.
+- **Source of truth:** The animation script is derived from the same markdown that produces the static page. Headings, prose paragraphs, math blocks, and Lean4 code blocks become a sequence of typed scene nodes (`Heading`, `Prose`, `Formula`, `LeanBlock`, `Diagram`, `Pause`). A build-time pass in `moonmath-content` emits a deterministic `immersive.json` (or compact binary) per page next to the rendered HTML. No new authoring file is required.
+- **Animation primitives:** entrance/exit transitions, term highlighting and re-substitution within a formula, step-by-step proof reveal, camera focus, and timed pacing. Diagrams and visualizations declared on a page (e.g. Mandelbrot canvas, IFS sliders) appear as embedded scenes inside the same egui frame.
+- **Controls:** spacebar play/pause, arrow keys for prev/next step, `[`/`]` for speed, `Esc` to return to the article view. A thin progress bar overlays the bottom edge. Controls auto-hide after 2s of inactivity.
+- **Accessibility:** respects `prefers-reduced-motion` (transitions become instant cuts), provides a "View transcript" toggle that overlays the original markdown text, and exposes step boundaries to keyboard users. All narration text is selectable as plain text via an off-screen DOM mirror so screen readers are not locked out.
+- **Performance budget:** the immersive scene must hit 60fps on a 2020-class laptop for the full proof of any premier page; `moonmath-viz` owns the render loop and shares the canvas with `moonmath-egui`.
+
 ## Architecture
 
 ### Static Site Generation (SSG)
 
 MoonMath is a **statically generated site**. All pages are pre-rendered at build time with no runtime server:
 
-- **Build time:** Content is processed (markdown → HTML, KaTeX rendering, wiki-link resolution, backlink indexing) during `cargo leptos build`. The output is a set of static HTML files + a WASM bundle.
-- **Runtime:** The WASM bundle hydrates the static HTML and handles all interactivity client-side: navigation, tooltips, Lean4 compilation (via WASM or external API), visualizations.
-- **No server functions:** All data that pages need is either baked into the HTML at build time or fetched client-side. No Axum server is required in production — just a static file host.
+- **Build time:** Content is processed (markdown → HTML, KaTeX rendering, wiki-link resolution, backlink indexing, immersive scene compilation, card image rendering) during `cargo leptos build`. The output is a set of static HTML files + a WASM bundle + per-page assets (`immersive.json`, `card.png`).
+- **Runtime:** The WASM bundle hydrates the static HTML and handles all interactivity client-side: navigation, tooltips, Lean4 compilation (via WASM or external API), visualizations, immersive playback.
+- **No server functions on the hot path:** All data that pages need is either baked into the HTML at build time or fetched client-side. The only optional runtime endpoint is the Lean4 compile fallback (see below).
 
-This eliminates SSR hydration mismatches and enables deployment to any static host (GitHub Pages, Cloudflare Pages, Vercel, S3 + CloudFront).
+This eliminates SSR hydration mismatches and enables deployment to a Cloudflare Worker (see [Deployment](#deployment-cloudflare-workers)) or any compatible static host.
 
 ### Frontend
 
@@ -73,8 +86,39 @@ This eliminates SSR hydration mismatches and enables deployment to any static ho
 ### Build & Deployment
 
 - `cargo-leptos` for SSG build producing static output
-- Static asset hosting (GitHub Pages, Cloudflare Pages, Vercel, or S3 + CloudFront)
+- Cloudflare Worker as the primary deployment target (see below)
 - No Docker containers needed for production
+
+### Deployment (Cloudflare Workers)
+
+MoonMath ships as a single Cloudflare Worker that serves the static SSG output and, optionally, fronts a Lean4 compile fallback. This is the only supported production target — everything is shaped around it.
+
+- **Asset serving:** `target/site/` (the cargo-leptos SSG output) is uploaded to Workers Static Assets. The Worker entrypoint is a thin Rust module compiled with `worker-rs` (or, equivalently, a TypeScript shim) that delegates `GET` requests to the static assets binding and applies HTTP caching headers (immutable for hashed assets, short TTL for HTML).
+- **Routing:** Pretty URLs (`/showcase/:category/:slug`, `/showcase/:category/:slug/immersive`) are served by mapping each route to its pre-rendered `index.html`. 404 falls back to a static `404.html`.
+- **Lean4 compile fallback:** A single Worker route `POST /api/lean/compile` proxies to a managed Lean4 service (Cloudflare Containers or an external host) when the client-side WASM compiler is unavailable. Bodies are size-capped (32 KB) and rate-limited per IP via Workers KV.
+- **Configuration:** `wrangler.toml` at the repo root pins the Worker name, compatibility date, static assets binding, and environment-specific routes (`moonmath.dev`, `staging.moonmath.dev`). Secrets (Lean fallback URL, signing key) are set via `wrangler secret put`.
+- **CI deploy:** GitHub Actions builds the SSG output, runs the [acceptance test suite](#acceptance-testing), and publishes via `wrangler deploy` on green. Preview deployments are created per PR via Cloudflare's `--name` per-branch convention.
+- **Observability:** Worker tail logs go to Cloudflare's Logpush; basic metrics (req count, error rate, p95 latency) are scraped from the Cloudflare API into the project's existing dashboards.
+
+### Acceptance Testing
+
+Every build runs an acceptance suite that drives a real Chrome instance via the **Chrome DevTools Protocol (CDP)** and refuses to deploy if any check fails. The suite is the canonical answer to "did this change break the site?" — `cargo check` and unit tests cannot, by themselves, detect KaTeX layout breakage, eframe canvas regressions, or a Lean4 proof that no longer compiles in the browser.
+
+- **Runner:** A Rust crate `crates/moonmath-acceptance` using [`chromiumoxide`](https://github.com/mattsse/chromiumoxide) (CDP client over async-tungstenite). No Node, no Playwright. The runner boots the SSG output via `wrangler dev` (or `python -m http.server` for fast local runs), launches headless Chrome, and walks a fixed list of routes.
+- **Trigger:**
+  - Local: `cargo acceptance` (alias defined in `.cargo/config.toml`) — runs on demand and is wired into the `cargo dev` pre-deploy step described in `CLAUDE.md`.
+  - CI: a required GitHub Actions job between `cargo leptos build` and `wrangler deploy`. A red acceptance run blocks merge and blocks deploy.
+- **Coverage (must all pass):**
+  1. **Lean4 proofs compile.** For each showcase page with `lean4_status = "complete"` or `"partial"`, the runner navigates to the page, clicks "Compile", and asserts the compiler reports success within 30 s. Failures dump the editor contents and compiler diagnostics into the run artifacts. Pages with `sorry`/`planned` are asserted to *render* the snippet but skipped from the compile gate.
+  2. **Formulas render properly.** For every `$...$` and `$$...$$` block in source, the runner asserts the corresponding `.katex` element exists, has non-zero bounding box, and contains no `.katex-error` span. A pixel-diff baseline is captured for the front page hero formula and each premier page's primary `latex` formula; >1% pixel delta fails the run.
+  3. **Interactions and animations work.** Per-page checks include:
+     - The "Open in Immersive Mode" link navigates to `/...:slug/immersive`, the eframe canvas mounts, and the first animation step advances within 2 s.
+     - Spacebar pause/resume changes the playback state (verified via a debug attribute on the canvas root).
+     - Showcase pages with `tags = ["interactive", ...]` boot their canvas (Mandelbrot, IFS) and respond to a synthetic mouse drag with a CDP `Input.dispatchMouseEvent` sequence.
+     - `prefers-reduced-motion` is honored: with the media feature emulated on, no transitions exceed 50 ms.
+- **Test data and fixtures:** The list of routes and per-page assertions is generated at build time from the same frontmatter that produces the site (`acceptance.json`), so adding a new showcase page automatically extends coverage. There is no separate test inventory to keep in sync.
+- **Artifacts:** On failure, the runner writes screenshots, HAR, console logs, and Lean diagnostics into `target/acceptance/<run-id>/` and uploads them as a CI artifact.
+- **Why CDP, not Playwright/WebDriver:** CDP is the lowest-friction Rust-native option, integrates cleanly with the existing Cargo workflow, and keeps the toolchain in one language. It also gives direct access to performance traces for the 60fps immersive-mode budget.
 
 ## Tech Stack
 
@@ -86,10 +130,13 @@ This eliminates SSR hydration mismatches and enables deployment to any static ho
 | Visualization | egui (via eframe WASM), Canvas 2D / WebGL via web-sys |
 | Math rendering | katex-rs (build-time) + KaTeX CSS (client) |
 | Code editor | egui-based editor (pure Rust, no JS) |
-| Lean4 | lean4web WASM port (client-side) or external API fallback |
+| Lean4 | lean4web WASM port (client-side) or Cloudflare Worker fallback |
 | LaTeX rendering | katex-rs (build-time) |
 | Typst rendering | typst CLI (build-time) |
-| Hosting | Any static file host (GitHub Pages, Cloudflare Pages, Vercel) |
+| Immersive mode | eframe + egui (WASM canvas, pure animation) |
+| Card images | Headless Chrome (CDP) snapshot of build-time card component |
+| Hosting | Cloudflare Worker (Workers Static Assets) |
+| Acceptance tests | Rust + chromiumoxide (Chrome DevTools Protocol) |
 
 ## Navigation & Information Architecture
 
@@ -115,16 +162,28 @@ Examples:
 Each category page displays:
 - Category title and description
 - A card grid of all showcase pages within the category, each showing:
+  - **A generated card image** (see [Card Images](#card-images) below) — never a text-only card
   - Theorem/finding title
   - Brief summary (1–2 sentences)
   - Tags (e.g. "interactive", "lean4-proof", "visualization")
-  - Difficulty indicator (introductory / intermediate / advanced)
+  - A small **"Premier"** badge if the page is marked premier (assumes limited prerequisite knowledge of the topic). Pages without the badge make no claim about prerequisite difficulty.
 - Breadcrumb navigation: Home → Showcase → Category
+
+#### Card Images
+
+Every showcase card displays a generated image — text-only cards are not permitted on `/showcase`, category pages, or the home page.
+
+- **Source:** Each showcase page renders a dedicated `<ShowcaseCard>` component at build time (Leptos SSG route `/_card/:category/:slug`), styled to a fixed 1200×630 canvas with the page title, primary `latex` formula (KaTeX-rendered), category accent, and category icon.
+- **Generation:** A build step (`cargo run -p moonmath-ssg -- --cards`) launches headless Chrome via CDP, navigates to each `/_card/...` route, and captures a screenshot to `target/site/cards/<category>/<slug>.png` (and `.webp`). The same toolchain that powers acceptance tests is reused — no extra image library.
+- **Override:** A page may declare `card_image = "path/to/custom.png"` in frontmatter to bypass generation (useful for fractal/visualization showcases that prefer a real render of their attractor).
+- **Cache:** Cards are content-hashed and only regenerated when the page's frontmatter, primary formula, or category metadata changes.
+- **Fallback:** If generation fails for a page, the build fails — there is no text-only fallback in production. The acceptance suite asserts every visible card on `/showcase` and category pages has a non-empty rendered image.
 
 ### Individual Showcase Page
 
 Each showcase page presents a single theorem or finding with:
-- Title, author attribution (where applicable), and difficulty level
+- Title, author attribution (where applicable), and a "Premier" badge if applicable (no introductory/intermediate/advanced rating; see [Premier Tag](#premier-tag))
+- An **"Open in Immersive Mode"** action in the page header (icon button, `i` shortcut) — links to `/showcase/:category/:slug/immersive`
 - KaTeX-rendered mathematical statement
 - Step-by-step proof walkthrough with animated explanations
 - **Lean4 proof snippet** — every showcase page MUST include a Lean4 formalization of the theorem/finding, rendered with syntax highlighting and compilable client-side. This is a core differentiator: MoonMath provides machine-checked proofs alongside human-readable explanations.
@@ -133,6 +192,17 @@ Each showcase page presents a single theorem or finding with:
 - Breadcrumb navigation: Home → Showcase → Category → This Page
 - Prev/Next navigation within the same category
 - **Backlinks and concept tooltips** (see below)
+
+#### Premier Tag
+
+MoonMath does **not** rate pages by difficulty (introductory / intermediate / advanced). Difficulty levels were removed because they were both subjective and discouraging — readers would self-select away from "advanced" content even when the page was approachable, and authors would over- or under-rate their own work.
+
+Instead, a single optional boolean tag, `premier`, marks pages that **assume limited prerequisite knowledge of the topic**. A premier page is the recommended starting point for that topic — it doesn't require the reader to have seen related theorems first.
+
+- `premier = true` — Reader can land here cold and follow along. Earns the "Premier" badge on cards and the page header.
+- (omitted / `premier = false`) — Page assumes the reader has worked through prerequisite material (typically declared via `prerequisites = [...]`).
+
+A category may have any number of premier pages (including zero). The home page and category pages surface premier pages first in the card grid.
 
 #### Lean4 Proof Requirement
 
@@ -267,10 +337,14 @@ The home page serves as the entry point with:
 | **v0.1** | Project scaffolding — Leptos shell, content pipeline, KaTeX math, cargo-leptos build. **Done.** |
 | **v0.1.5** | Category navigation — showcase index, category pages, breadcrumbs, prev/next within category, frontmatter-driven content from `content/showcase/`. **Done.** |
 | **v0.1.6** | Backlinks & concept tooltips — `[[wiki-links]]` in markdown, hover preview popups, "Referenced by" section, backlink index, concept graph page. **Done.** |
-| **v0.1.7** | **SSG migration** — Replace SSR + hydration with static site generation. All pages pre-rendered at build time, no runtime server. Eliminates hydration mismatches. Deploy to static host. |
+| **v0.1.7** | **SSG migration** — Replace SSR + hydration with static site generation. All pages pre-rendered at build time, no runtime server. Eliminates hydration mismatches. |
 | **v0.1.8** | **Lean4 in every showcase** — Add Lean4 proof snippets to all 10 existing showcase pages. Add `lean4_status` frontmatter field. Lean4 syntax highlighting in rendered HTML. |
+| **v0.1.9** | **Premier tag + card images** — Remove `difficulty` from frontmatter and UI. Introduce `premier` boolean. Add build-time card image generation (CDP screenshot of `/_card/...` route) and require non-text cards site-wide. |
 | **v0.2** | egui canvas + Leptos↔egui bridge for interactive visualizations |
+| **v0.2.5** | **Cloudflare Worker deployment** — `wrangler.toml`, Workers Static Assets binding, GitHub Actions deploy pipeline, preview deploys per PR, optional Lean compile fallback route. |
+| **v0.2.6** | **Acceptance test suite (CDP)** — `crates/moonmath-acceptance` with chromiumoxide. Build-blocking checks for Lean4 compile, formula rendering, and animation/interaction smoke. Wired into CI. |
 | **v0.3** | Algorithm visualization engine — 3-5 algorithms with interactive controls |
+| **v0.3.5** | **Immersive Mode** — `eframe`-based per-page animation that narrates the page's markdown. `immersive.json` build artifact, `/showcase/:category/:slug/immersive` route, playback controls, reduced-motion support. |
 | **v0.4** | Lean4 client-side compilation — lean4web WASM integration, egui-based editor, compile-and-check in browser |
 | **v0.5** | LeanTeX→LaTeX→KaTeX + Typst PDF export, search, offline support, accessibility |
 
@@ -361,11 +435,12 @@ Individual showcase pages use frontmatter to declare metadata:
 title = "Theorem Name"
 description = "One-line summary for the card grid"
 weight = 10
-difficulty = "intermediate"   # introductory | intermediate | advanced
+premier = true                # optional; true = assumes limited prerequisite knowledge of the topic
 tags = ["lean4-proof", "interactive", "visualization"]
-latex = "\\forall n, \\exists p > n"   # primary formula (used in tooltips)
+latex = "\\forall n, \\exists p > n"   # primary formula (used in tooltips and card image)
 prerequisites = ["prime-theorem"]   # slugs of other showcase pages
-lean4_status = "complete"   # complete | partial | sorry | planned
+lean4_status = "complete"     # complete | partial | sorry | planned
+card_image = "custom-card.png"  # optional; overrides the build-time generated card
 +++
 
 Full content: math, explanation, [[wiki-links]], and Lean4 code blocks.
@@ -387,3 +462,7 @@ Every page MUST include at least one Lean4 fenced code block:
 - Should concept tooltips also work for inline math formulas (hover a formula to see its definition)?
 - Should the concept graph visualization be interactive (zoom, pan, click-to-navigate)?
 - **Lean4 completeness:** For theorems that are extremely difficult to formalize (e.g. Quadratic Reciprocity), is `sorry` acceptable as a placeholder with a comment explaining what's needed?
+- **Immersive script authoring:** Is the auto-derived `immersive.json` from markdown enough, or do some pages need an optional `immersive.toml` override (custom timing, camera moves, hand-tuned highlights)?
+- **Card image cost:** Headless Chrome at build time adds seconds per page. Is there a Rust-native renderer (resvg + a KaTeX-to-SVG path) that we should use to keep `cargo dev` fast?
+- **Acceptance test flake budget:** What's the policy when a CDP test flakes — auto-retry up to N times, or fail fast and require the author to investigate? Pixel-diff thresholds in particular are flaky territory.
+- **Lean fallback service:** The Cloudflare Worker fallback proxies to a Lean compile service — do we self-host on Cloudflare Containers, or use a managed third-party endpoint, and how do we keep it from becoming an abuse vector?

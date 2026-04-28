@@ -1,0 +1,194 @@
+name: Deploy (Cloudflare Worker)
+
+# Implements specs/prd.md → "Deployment (Cloudflare Workers)".
+#
+# Triggers:
+#   - push to default branch  → deploys --env production
+#   - manual workflow_dispatch → choose environment
+#   - pull_request           → preview deploy at moonmath-preview-pr-<n>
+#
+# Required repo secrets:
+#   CLOUDFLARE_API_TOKEN  — token with Workers Scripts:Edit + Account:Read
+#   CLOUDFLARE_ACCOUNT_ID — Cloudflare account ID
+#
+# Acceptance gate: after deploy, scripts/acceptance.sh hits the live URL and
+# fails the run if any route is broken. This is the HTTP-level smoke gate;
+# the full chromiumoxide CDP suite (PRD v0.2.6) lands separately.
+
+on:
+  push:
+    branches:
+      - feat/inspirations-hall-of-fame
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment environment"
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CARGO_TERM_COLOR: always
+      RUSTFLAGS: "-D warnings"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: deploy
+
+      - name: Install cargo-leptos
+        run: cargo install --locked cargo-leptos@0.3.4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Generate SSG data
+        run: cargo run -p moonmath-ssg
+
+      - name: Build release (cargo leptos)
+        run: cargo leptos build --release
+
+      - name: Prerender routes to dist/
+        run: ./scripts/prerender.sh
+
+      - name: Verify dist/ shape
+        run: |
+          set -e
+          test -f dist/index.html
+          test -f dist/showcase/index.html
+          test -d dist/pkg
+          test -d dist/data
+          echo "pages: $(find dist -name index.html | wc -l)"
+
+      - name: Install Worker dependencies
+        working-directory: worker
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck Worker
+        working-directory: worker
+        run: npm run typecheck
+
+      # ─── Deploy ────────────────────────────────────────────────────────────
+
+      - name: Resolve deploy target
+        id: target
+        env:
+          HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "kind=preview" >> "$GITHUB_OUTPUT"
+            echo "name=moonmath-preview-pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "kind=env" >> "$GITHUB_OUTPUT"
+            echo "env=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=env" >> "$GITHUB_OUTPUT"
+            echo "env=production" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$HAS_CF_TOKEN" = "true" ] && [ "$HAS_CF_ACCOUNT" = "true" ]; then
+            echo "creds=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "creds=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cloudflare secrets not configured — deploy step will be skipped. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to the repo to enable deploys."
+          fi
+
+      - name: Deploy preview Worker
+        id: deploy_preview
+        if: steps.target.outputs.kind == 'preview' && steps.target.outputs.creds == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --name ${{ steps.target.outputs.name }}
+
+      - name: Deploy ${{ steps.target.outputs.env }} Worker
+        id: deploy_env
+        if: steps.target.outputs.kind == 'env' && steps.target.outputs.creds == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env ${{ steps.target.outputs.env }}
+
+      # ─── Acceptance ──────────────────────────────────────────────────────
+      # HTTP-level smoke gate against the just-deployed URL. Walks every
+      # route enumerated from target/ssg-data, asserts 200 + brand + hydration
+      # script + KaTeX rendering survive.
+
+      - name: Resolve deployed URL
+        id: deployed_url
+        if: steps.target.outputs.creds == 'true'
+        run: |
+          if [ "${{ steps.target.outputs.kind }}" = "preview" ]; then
+            url="${{ steps.deploy_preview.outputs.deployment-url }}"
+          else
+            url="${{ steps.deploy_env.outputs.deployment-url }}"
+          fi
+          if [ -z "$url" ]; then
+            echo "::error::wrangler-action did not return a deployment-url"
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Acceptance target: $url"
+
+      - name: Run acceptance suite against deployment
+        if: steps.target.outputs.creds == 'true'
+        env:
+          BASE_URL: ${{ steps.deployed_url.outputs.url }}
+        run: ./scripts/acceptance.sh "$BASE_URL"
+
+      - name: Comment preview URL on PR
+        if: steps.target.outputs.kind == 'preview' && steps.target.outputs.creds == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const name = "${{ steps.target.outputs.name }}";
+            const url = "${{ steps.deployed_url.outputs.url }}";
+            const body = `Preview deployed: ${url}\n\n_(Worker name: \`${name}\` — acceptance suite passed against this URL.)_`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.user.type === "Bot" && c.body.startsWith("Preview deployed:"));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
