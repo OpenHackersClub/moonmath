@@ -37,6 +37,14 @@ body {
     min-height: 100vh;
 }
 
+a {
+    color: #e5c07b;
+}
+
+a:hover {
+    color: #f0d49a;
+}
+
 /* Navigation */
 .site-nav {
     display: flex;
