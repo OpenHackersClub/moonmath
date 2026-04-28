@@ -12,9 +12,16 @@
  *    Assets binding's `not_found_handling = "404-page"`).
  */
 
+import { getContainer } from "@cloudflare/containers";
+import { LeanCompiler } from "./lean-compiler";
+
+export { LeanCompiler };
+
 interface Env {
   ASSETS: Fetcher;
   LEAN_RATE_LIMIT?: KVNamespace;
+  LEAN_CACHE?: KVNamespace;
+  LEAN_COMPILER?: DurableObjectNamespace<LeanCompiler>;
   LEAN_FALLBACK_ENABLED: string;
   LEAN_REQUEST_MAX_BYTES: string;
   LEAN_FALLBACK_URL?: string;
@@ -22,11 +29,21 @@ interface Env {
 
 const RATE_LIMIT_WINDOW_S = 60;
 const RATE_LIMIT_MAX_REQUESTS = 20;
+// Successful compiles are deterministic — cache them aggressively. KV TTL is
+// the floor; the Worker also stamps Cache-Control on the HTTP response.
+const COMPILE_CACHE_TTL_S = 86_400;
+
+// Path the Leptos client posts to (server-fn name + "/api" prefix from the
+// #[server(CompileLean, "/api")] attribute in showcase_detail.rs).
+const COMPILE_LEAN_PATH = "/api/CompileLean";
 
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.pathname === COMPILE_LEAN_PATH) {
+      return handleCompileLean(request, env);
+    }
     if (url.pathname === "/api/lean/compile") {
       return handleLeanCompile(request, env);
     }
@@ -71,6 +88,143 @@ function decorateAssetResponse(pathname: string, response: Response): Response {
     status: response.status,
     statusText: response.statusText,
     headers,
+  });
+}
+
+/**
+ * Server-fn endpoint for `compile_lean` (showcase_detail.rs).
+ *
+ * Wire format (Leptos default `PostUrl` input + `Json` output):
+ *   request:  POST /api/CompileLean
+ *             Content-Type: application/x-www-form-urlencoded
+ *             body: code=<urlencoded source>
+ *   success:  200 application/json   → CompileResponse
+ *   failure:  4xx/5xx text/plain     → "ServerError|<message>"
+ *
+ * On error we use the Leptos-recognised `ServerError|<msg>` body so the
+ * client surfaces a real error (server_fn-0.7.x parses this in `de(&str)`)
+ * instead of the cryptic "Could not deserialize error \"\"" we'd get from an
+ * empty 4xx body.
+ */
+async function handleCompileLean(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") {
+    return serverFnError("method_not_allowed", 405);
+  }
+
+  const maxBytes = Number.parseInt(env.LEAN_REQUEST_MAX_BYTES ?? "32768", 10);
+  const formText = await request.text();
+  if (formText.length > maxBytes) {
+    return serverFnError(`payload too large (limit ${maxBytes} bytes)`, 413);
+  }
+
+  let code: string;
+  try {
+    code = decodeFormCode(formText);
+  } catch (e) {
+    return serverFnError(`invalid request body: ${(e as Error).message}`, 400);
+  }
+
+  const ip =
+    request.headers.get("CF-Connecting-IP") ??
+    request.headers.get("X-Forwarded-For") ??
+    "unknown";
+  if (!(await checkRateLimit(env, ip))) {
+    return serverFnError(
+      `rate limited — retry in ${RATE_LIMIT_WINDOW_S}s`,
+      429,
+    );
+  }
+
+  const cacheKey = await sha256Hex(code);
+  if (env.LEAN_CACHE) {
+    const hit = await env.LEAN_CACHE.get(cacheKey);
+    if (hit) {
+      return jsonOk(hit, { cacheHit: true });
+    }
+  }
+
+  if (!env.LEAN_COMPILER) {
+    return serverFnError(
+      "Lean compile container is not bound on this deployment. " +
+        "Set [[durable_objects.bindings]] LEAN_COMPILER in wrangler.toml.",
+      503,
+    );
+  }
+
+  let upstream: Response;
+  try {
+    const container = getContainer(env.LEAN_COMPILER);
+    upstream = await container.fetch(
+      new Request("http://lean-compiler.internal/compile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      }),
+    );
+  } catch (e) {
+    return serverFnError(
+      `Lean compile container unreachable: ${(e as Error).message}`,
+      502,
+    );
+  }
+
+  const upstreamText = await upstream.text();
+  if (!upstream.ok) {
+    return serverFnError(
+      `Lean compile container returned ${upstream.status}: ${upstreamText.slice(0, 256)}`,
+      502,
+    );
+  }
+
+  // Cache successful responses only — including compile failures (where
+  // success: false) so users see consistent diagnostics on repeat clicks.
+  // The cache key is sha256(code) so any source change busts it.
+  if (env.LEAN_CACHE) {
+    await env.LEAN_CACHE.put(cacheKey, upstreamText, {
+      expirationTtl: COMPILE_CACHE_TTL_S,
+    });
+  }
+
+  return jsonOk(upstreamText, { cacheHit: false });
+}
+
+function decodeFormCode(formBody: string): string {
+  // Server-fn `PostUrl` input is a URL-encoded form. For
+  // compile_lean(code: String) the body is `code=<urlencoded>`.
+  const params = new URLSearchParams(formBody);
+  const code = params.get("code");
+  if (code === null) throw new Error("missing `code` field");
+  return code;
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(input),
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function jsonOk(body: string, opts: { cacheHit: boolean }): Response {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Lean-Cache": opts.cacheHit ? "hit" : "miss",
+    },
+  });
+}
+
+function serverFnError(message: string, status: number): Response {
+  return new Response(`ServerError|${message}`, {
+    status,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
   });
 }
 

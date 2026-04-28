@@ -26,6 +26,9 @@
 # Claude Code local settings
 .claude/
 
+# Workspace temp dir (CLAUDE.md convention)
+.tmp/
+
 # OS
 .DS_Store
 Thumbs.db

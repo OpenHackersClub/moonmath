@@ -133,6 +133,32 @@ else
   log "  ok   404 handling"
 fi
 
+# ─── Lean compile endpoint ──────────────────────────────────────────────────
+# Skips by default — Cloudflare Containers cold-start can take 5+ seconds
+# and we don't want to gate every PR preview on the container build.
+# Opt-in by setting ACCEPTANCE_CHECK_LEAN_COMPILE=1.
+
+if [[ "${ACCEPTANCE_CHECK_LEAN_COMPILE:-0}" == "1" ]]; then
+  log "checking POST /api/CompileLean"
+  # Server-fn `PostUrl` input format: URL-encoded form, field name `code`.
+  # We pick a trivial proof so this works with the no-Mathlib v0 image.
+  compile_code='theorem t : 1 = 1 := rfl'
+  compile_body="code=$(jq -rn --arg c "$compile_code" '$c|@uri')"
+  compile_status=$(curl -sS -o "$tmp_body" -w "%{http_code}" --max-time 30 \
+    -X POST "${BASE_URL}/api/CompileLean" \
+    -H 'Content-Type: application/x-www-form-urlencoded' \
+    --data "$compile_body" || echo "000")
+  if [[ "$compile_status" != "200" ]]; then
+    log "  FAIL compile → HTTP $compile_status, body: $(head -c 200 "$tmp_body")"
+    failed=$((failed + 1))
+  elif ! jq -e '.success == true' "$tmp_body" >/dev/null 2>&1; then
+    log "  FAIL compile → success != true, body: $(head -c 200 "$tmp_body")"
+    failed=$((failed + 1))
+  else
+    log "  ok   compile (trivial proof verified)"
+  fi
+fi
+
 # ─── Result ─────────────────────────────────────────────────────────────────
 
 if (( failed > 0 )); then
