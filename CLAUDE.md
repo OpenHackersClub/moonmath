@@ -31,6 +31,30 @@ cargo check -p moonmath-lean
 
 The dev server runs at `http://127.0.0.1:3000` (reload on port 3001).
 
+## Deployment (Cloudflare Worker)
+
+Production target is a single Cloudflare Worker fronting Workers Static Assets. See `docs/deployment.md` for full details.
+
+```sh
+# 1. Build everything.
+cargo run -p moonmath-ssg
+cargo leptos build --release
+
+# 2. Prerender all routes to ./dist (boots SSR, walks routes via curl).
+./scripts/prerender.sh
+
+# 3. Local Worker preview against ./dist on :8787.
+cd worker && npm install && npm run dev
+
+# 4. Deploy.
+cd worker && npm run deploy            # production
+cd worker && npm run deploy:staging    # staging
+```
+
+CI: `.github/workflows/deploy.yml` runs steps 1–3 then `wrangler deploy`. PRs get a preview Worker at `moonmath-preview-pr-<n>.workers.dev`.
+
+`scripts/prerender.sh` is a stop-gap until milestone v0.1.7 (SSG migration) lands and `cargo leptos build` writes static HTML directly.
+
 ## Architecture
 
 **Leptos 0.7.8 SSR + Hydration** — The server renders full HTML with Axum, then the client hydrates with a WASM bundle. The `ssr` and `hydrate` features are mutually exclusive and control which code paths compile.

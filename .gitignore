@@ -10,6 +10,12 @@
 # Leptos
 /site
 
+# Cloudflare Worker
+/worker/node_modules
+/worker/.wrangler
+/worker/.dev.vars
+/.wrangler
+
 # IDE
 .idea/
 .vscode/

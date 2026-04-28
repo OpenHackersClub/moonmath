@@ -1,0 +1,84 @@
+#
+# MoonMath — Cloudflare Worker deployment
+#
+# Implements the deployment target defined in specs/prd.md (milestone v0.2.5).
+# A thin TypeScript Worker serves the prerendered SSG output via Workers Static
+# Assets and exposes an optional Lean4 compile fallback at /api/lean/compile.
+#
+# First-time setup:
+#   1) `npm install` inside ./worker
+#   2) `wrangler kv namespace create LEAN_RATE_LIMIT` and paste the id below
+#      (and `... --preview` for the preview id).
+#   3) `wrangler secret put LEAN_FALLBACK_URL` if you want the compile route
+#      to forward to a managed Lean service. Without it the route returns 503.
+#   4) `cargo run -p moonmath-ssg && cargo leptos build --release && \
+#       scripts/prerender.sh` to populate ./dist.
+#   5) `wrangler deploy` (or `wrangler deploy --env staging`).
+#
+
+name = "moonmath"
+main = "worker/src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers Static Assets binding — the prerendered SSG output.
+# `scripts/prerender.sh` populates ./dist; CI does the same before `wrangler deploy`.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+# Pretty URLs already have their own index.html in subdirectories
+# (e.g. dist/showcase/number-theory/prime-theorem/index.html), so use the
+# default html_handling that resolves them. 404s fall through to dist/404.html.
+not_found_handling = "404-page"
+html_handling = "auto-trailing-slash"
+
+# Default vars — override per-env below.
+[vars]
+LEAN_FALLBACK_ENABLED = "false"
+LEAN_REQUEST_MAX_BYTES = "32768"
+
+# Per-IP rate limiter for /api/lean/compile. Replace `id`/`preview_id` with the
+# values printed by `wrangler kv namespace create LEAN_RATE_LIMIT`.
+# Until then the Worker treats a missing binding as "no rate limiting" and
+# logs a warning on first request.
+# [[kv_namespaces]]
+# binding = "LEAN_RATE_LIMIT"
+# id = "TODO-replace-with-output-of-wrangler-kv-namespace-create"
+# preview_id = "TODO-replace-with-output-of-wrangler-kv-namespace-create-preview"
+
+# Local dev: `wrangler dev` serves the same Worker against ./dist on :8787.
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Tail logs go to Cloudflare Logpush by default; explicit observability config
+# requires the workers_observability flag and is left to the dashboard.
+[observability]
+enabled = true
+
+# ─── Environments ────────────────────────────────────────────────────────────
+#
+# `wrangler deploy --env production` for prod, `wrangler deploy --env staging`
+# for staging. The `routes` blocks are commented until the real domain is set
+# up — until then deploys land on the workers.dev subdomain.
+
+[env.production]
+name = "moonmath"
+# routes = [
+#   { pattern = "moonmath.dev/*", zone_name = "moonmath.dev" },
+# ]
+[env.production.vars]
+LEAN_FALLBACK_ENABLED = "true"
+
+[env.staging]
+name = "moonmath-staging"
+# routes = [
+#   { pattern = "staging.moonmath.dev/*", zone_name = "moonmath.dev" },
+# ]
+[env.staging.vars]
+LEAN_FALLBACK_ENABLED = "true"
+
+# Per-PR previews are created in CI by passing
+#   `wrangler deploy --name moonmath-preview-pr-<n>`
+# from .github/workflows/deploy.yml. No env block needed — the deploy
+# inherits the top-level config and writes to a fresh Worker name.
