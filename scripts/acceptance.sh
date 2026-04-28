@@ -42,7 +42,7 @@ command -v jq   >/dev/null || fail "jq is required"
 log "waiting for $BASE_URL/ (max ${MAX_WAIT}s)"
 ready=0
 for _ in $(seq 1 "$MAX_WAIT"); do
-  if curl -sf -o /dev/null --max-time 5 "$BASE_URL/"; then
+  if curl -sfL -o /dev/null --max-time 5 "$BASE_URL/"; then
     ready=1
     break
   fi
@@ -78,7 +78,9 @@ tmp_body="$(mktemp)"
 trap 'rm -f "$tmp_body"' EXIT
 
 for route in "${routes[@]}"; do
-  http_code=$(curl -sS -o "$tmp_body" -w "%{http_code}" --max-time 15 "${BASE_URL}${route}" || echo "000")
+  # -L follows redirects; the Worker uses html_handling = "auto-trailing-slash"
+  # which 307s `/foo` → `/foo/`, so we need to chase the final response.
+  http_code=$(curl -sSL -o "$tmp_body" -w "%{http_code}" --max-time 15 "${BASE_URL}${route}" || echo "000")
   if [[ "$http_code" != "200" ]]; then
     log "  FAIL $route → HTTP $http_code"
     failed=$((failed + 1))
@@ -107,7 +109,7 @@ first_page_slug=$(jq -r '.[0].slug' "$SSG_DATA_DIR/showcase/${first_cat}/pages.j
 if [[ -n "$first_page_slug" ]]; then
   spot_url="${BASE_URL}/showcase/${first_cat}/${first_page_slug}"
   log "spot-checking KaTeX on $spot_url"
-  if curl -sf --max-time 15 "$spot_url" -o "$tmp_body"; then
+  if curl -sfL --max-time 15 "$spot_url" -o "$tmp_body"; then
     if ! grep -q 'class="katex' "$tmp_body"; then
       log "  FAIL katex spot-check → no .katex span found"
       failed=$((failed + 1))
