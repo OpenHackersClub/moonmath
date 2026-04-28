@@ -87,24 +87,34 @@ impl LeanCompiler {
             .is_ok()
     }
 
-    /// Detect whether code needs Lake context (imports Mathlib, Std, etc.).
-    fn needs_lake_context(code: &str) -> bool {
-        code.lines().any(|line| {
-            let trimmed = line.trim();
-            trimmed.starts_with("import Mathlib")
-                || trimmed.starts_with("import Std")
-                || trimmed.starts_with("import Batteries")
-        })
+    /// Whether the user's code already has any `import` line.
+    fn has_imports(code: &str) -> bool {
+        code.lines().any(|line| line.trim_start().starts_with("import "))
     }
 
     /// Compile a Lean4 source string.
+    ///
+    /// Strategy: if a Lake project is available, always use it — many
+    /// showcase snippets use Mathlib tactics (`norm_num`, `linarith`, etc.)
+    /// or types (`Nat.Prime`, `ℝ`) without explicit imports. Auto-prepend
+    /// `import Mathlib` when the user code has no imports so those snippets
+    /// resolve. Fall back to standalone `lean` only when no Lake project
+    /// exists.
     pub async fn compile(&self, req: CompileRequest) -> Result<CompileResponse, LeanCompileError> {
         if !Self::is_available().await {
             return Err(LeanCompileError::LeanNotFound);
         }
 
-        if Self::needs_lake_context(&req.code) {
-            self.compile_with_lake(&req.code).await
+        let lake_ready = self.config.lake_project_path.join("lakefile.lean").exists()
+            && Self::is_lake_available().await;
+
+        if lake_ready {
+            let code = if Self::has_imports(&req.code) {
+                req.code.clone()
+            } else {
+                format!("import Mathlib\n\n{}", req.code)
+            };
+            self.compile_with_lake(&code).await
         } else {
             self.compile_standalone(&req.code).await
         }
