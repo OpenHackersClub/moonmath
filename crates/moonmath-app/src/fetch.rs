@@ -58,7 +58,10 @@ async fn fetch_json_inner<T: serde::de::DeserializeOwned>(
 
     #[cfg(not(feature = "hydrate"))]
     {
-        let file_path = format!("target/site{}", url);
+        // SSG data lives in target/ssg-data/ (outside target/site/ which cargo-leptos wipes).
+        // URLs are like "/data/showcase/categories.json" → "target/ssg-data/showcase/categories.json"
+        let rel = url.strip_prefix("/data").unwrap_or(&url);
+        let file_path = format!("target/ssg-data{}", rel);
         let data = std::fs::read_to_string(&file_path)
             .map_err(|e| leptos::prelude::ServerFnError::new(format!("Failed to read {}: {}", file_path, e)))?;
         serde_json::from_str(&data)

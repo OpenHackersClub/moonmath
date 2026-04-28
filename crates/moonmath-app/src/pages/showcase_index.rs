@@ -48,11 +48,11 @@ pub fn ShowcaseIndexPage() -> impl IntoView {
                                 </div>
                             }.into_any()
                         }
-                        Err(e) => {
+                        Err(_) => {
                             view! {
                                 <div class="error">
                                     <h2>"Failed to load categories"</h2>
-                                    <p>{e.to_string()}</p>
+                                    <p>"Content is being generated. Please run cargo ssg and try again."</p>
                                 </div>
                             }.into_any()
                         }

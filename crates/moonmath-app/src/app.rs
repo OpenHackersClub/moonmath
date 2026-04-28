@@ -43,6 +43,7 @@ pub fn App() -> impl IntoView {
         <Title text="MoonMath — Interactive Math Visualization"/>
 
         <Router>
+            <ScrollToTop/>
             <Nav/>
             <main class="main-content">
                 <FlatRoutes fallback=|| view! {
@@ -74,6 +75,23 @@ pub fn App() -> impl IntoView {
                 </FlatRoutes>
             </main>
         </Router>
+    }
+}
+
+/// Scrolls the window to the top on every route change.
+/// Must be placed inside a `<Router>` so `use_location()` has context.
+#[component]
+fn ScrollToTop() -> impl IntoView {
+    #[cfg(feature = "hydrate")]
+    {
+        use leptos_router::hooks::use_location;
+        let location = use_location();
+        Effect::new(move |_| {
+            let _ = location.pathname.get();
+            if let Some(window) = web_sys::window() {
+                let _ = window.scroll_to_with_x_and_y(0.0, 0.0);
+            }
+        });
     }
 }
 

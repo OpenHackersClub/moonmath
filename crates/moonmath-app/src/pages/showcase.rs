@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use leptos_meta::*;
 
+use crate::components::compile_panel::CompilePanel;
 use crate::components::proof_viz::{ProofGraph, ProofWalkthrough};
 
 const PRIME_THEOREM_SOURCE: &str = r#"import Mathlib.Data.Nat.Prime.Basic
@@ -67,77 +68,9 @@ theorem InfinitudeOfPrimes (n : Nat) :
   · exact hp
 "#;
 
-/// Highlight lean code at compile time for the static showcase page.
-fn highlight_lean_static(code: &str) -> String {
-    // Simple inline highlighter matching the lean_code_block component
-    let mut out = String::with_capacity(code.len() * 2);
-    let chars: Vec<char> = code.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-
-    while i < len {
-        if i + 2 < len && chars[i] == '/' && chars[i + 1] == '-' && chars[i + 2] == '-' {
-            let start = i;
-            i += 3;
-            while i + 1 < len && !(chars[i] == '-' && chars[i + 1] == '/') { i += 1; }
-            if i + 1 < len { i += 2; }
-            let text: String = chars[start..i].iter().collect();
-            out.push_str(&format!("<span class=\"lean-doc-comment\">{}</span>", escape_html(&text)));
-            continue;
-        }
-        if i + 1 < len && chars[i] == '-' && chars[i + 1] == '-' {
-            let start = i;
-            while i < len && chars[i] != '\n' { i += 1; }
-            let text: String = chars[start..i].iter().collect();
-            out.push_str(&format!("<span class=\"lean-comment\">{}</span>", escape_html(&text)));
-            continue;
-        }
-        if chars[i] == '"' {
-            let start = i;
-            i += 1;
-            while i < len && chars[i] != '"' { if chars[i] == '\\' { i += 1; } i += 1; }
-            if i < len { i += 1; }
-            let text: String = chars[start..i].iter().collect();
-            out.push_str(&format!("<span class=\"lean-string\">{}</span>", escape_html(&text)));
-            continue;
-        }
-        if matches!(chars[i], '∀'|'∃'|'∧'|'∨'|'¬'|'∣'|'→'|'←'|'↔'|'≤'|'≥'|'≠'|'∈'|'∉'|'⊂'|'⊆'|'∅'|'×'|'⟨'|'⟩'|'λ') {
-            out.push_str(&format!("<span class=\"lean-symbol\">{}</span>", chars[i]));
-            i += 1;
-            continue;
-        }
-        if chars[i].is_alphanumeric() || chars[i] == '_' {
-            let start = i;
-            while i < len && (chars[i].is_alphanumeric() || chars[i] == '_' || chars[i] == '\'') { i += 1; }
-            let word: String = chars[start..i].iter().collect();
-            let kw = ["def","theorem","lemma","by","have","let","obtain","suffices","intro","notation","where","if","then","else","match","with","fun","do","return","import","open","namespace","end","structure","class","instance","deriving","section","variable","example","noncomputable","private","protected","mutual","inductive","axiom","abbrev","set_option"];
-            let tac = ["grind","simp","simp_all","by_cases","induction","exact","apply","rfl","ring","omega","norm_num","decide","trivial","constructor","cases","rcases","rintro","assumption","contradiction","linarith","positivity","field_simp","push_neg","use"];
-            if kw.contains(&word.as_str()) {
-                out.push_str(&format!("<span class=\"lean-kw\">{}</span>", escape_html(&word)));
-            } else if tac.contains(&word.as_str()) {
-                out.push_str(&format!("<span class=\"lean-tactic\">{}</span>", escape_html(&word)));
-            } else if word.chars().next().map_or(false, |c| c.is_uppercase()) {
-                out.push_str(&format!("<span class=\"lean-type\">{}</span>", escape_html(&word)));
-            } else if word.chars().all(|c| c.is_ascii_digit()) {
-                out.push_str(&format!("<span class=\"lean-number\">{}</span>", escape_html(&word)));
-            } else {
-                out.push_str(&escape_html(&word));
-            }
-            continue;
-        }
-        out.push_str(&escape_html(&chars[i].to_string()));
-        i += 1;
-    }
-    out
-}
-
-fn escape_html(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
-}
-
 #[component]
 pub fn PrimeShowcasePage() -> impl IntoView {
-    let highlighted = highlight_lean_static(PRIME_THEOREM_SOURCE);
+    let highlighted = crate::components::lean_code_block::highlight_lean(PRIME_THEOREM_SOURCE);
 
     view! {
         <Title text="Infinitude of Primes — MoonMath Showcase"/>
@@ -154,11 +87,35 @@ pub fn PrimeShowcasePage() -> impl IntoView {
                 <div class="lean-code-block">
                     <pre class="lean-code"><code inner_html=highlighted/></pre>
                 </div>
-                <div class="compile-controls">
-                    <button class="compile-btn" disabled=true>
-                        "Compile (coming in v0.4)"
-                    </button>
-                </div>
+                {
+                    let (compile_result, set_compile_result) = signal::<Option<Result<moonmath_types::CompileResponse, String>>>(None);
+                    let (compiling, set_compiling) = signal(false);
+                    view! {
+                        <div class="lean-compile-bar">
+                            <button
+                                class="compile-btn lean-compile-btn"
+                                on:click=move |_| {
+                                    let code = PRIME_THEOREM_SOURCE.to_string();
+                                    set_compiling.set(true);
+                                    set_compile_result.set(None);
+                                    leptos::task::spawn_local(async move {
+                                        let result = crate::pages::showcase_detail::compile_lean(code).await;
+                                        set_compile_result.set(Some(result.map_err(|e| e.to_string())));
+                                        set_compiling.set(false);
+                                    });
+                                }
+                                disabled=move || compiling.get()
+                            >
+                                {move || if compiling.get() {
+                                    "Compiling...".to_string()
+                                } else {
+                                    "Compile Proof".to_string()
+                                }}
+                            </button>
+                        </div>
+                        <CompilePanel result=compile_result/>
+                    }
+                }
             </section>
 
             <section class="showcase-section">

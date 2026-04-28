@@ -6,8 +6,10 @@ use moonmath_math::katex_render;
 use moonmath_types::*;
 
 fn main() {
+    let watch = std::env::args().any(|a| a == "--watch");
+
     let content_dir = Path::new("content");
-    let out_dir = Path::new("target/site/data");
+    let out_dir = Path::new("target/ssg-data");
 
     // Clean and recreate output directory
     if out_dir.exists() {
@@ -28,6 +30,14 @@ fn main() {
     generate_index_html();
 
     eprintln!("SSG: done.");
+
+    if watch {
+        let status = std::process::Command::new("cargo")
+            .args(["leptos", "watch"])
+            .status()
+            .expect("failed to run cargo leptos watch");
+        std::process::exit(status.code().unwrap_or(1));
+    }
 }
 
 fn generate_showcase_categories(content_dir: &Path, out_dir: &Path) {
@@ -149,11 +159,12 @@ fn generate_showcase_pages(
             });
 
             // Extract and highlight Lean4 blocks
-            let lean4_blocks: Vec<String> =
-                lean_highlight::extract_lean4_blocks(&page.source)
-                    .into_iter()
-                    .map(|code| lean_highlight::highlight_lean(&code))
-                    .collect();
+            let lean4_sources: Vec<String> =
+                lean_highlight::extract_lean4_blocks(&page.source);
+            let lean4_blocks: Vec<String> = lean4_sources
+                .iter()
+                .map(|code| lean_highlight::highlight_lean(code))
+                .collect();
 
             let detail = ShowcaseDetailResponse {
                 category_slug: cat.slug.clone(),
@@ -167,6 +178,7 @@ fn generate_showcase_pages(
                 next,
                 backlinks,
                 lean4_blocks,
+                lean4_sources,
             };
 
             write_json(

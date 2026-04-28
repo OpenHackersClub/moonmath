@@ -46,12 +46,12 @@ pub fn HomePage() -> impl IntoView {
                             }
                             _ => {
                                 view! {
-                                    <div class="features">
-                                        <div class="feature-card">
-                                            <h2>"Showcase"</h2>
-                                            <p>"Explore interactive mathematical explorations and proofs."</p>
-                                            <A href="/showcase" attr:class="feature-link">"Browse showcase"</A>
-                                        </div>
+                                    <p class="showcase-hint">"Could not load categories. Explore the showcase directly:"</p>
+                                    <div class="category-grid">
+                                        <A href="/showcase" attr:class="category-card">
+                                            <h3 class="category-card-title">"Browse All"</h3>
+                                            <p class="category-card-desc">"Explore all mathematical topics and proofs."</p>
+                                        </A>
                                     </div>
                                 }.into_any()
                             }

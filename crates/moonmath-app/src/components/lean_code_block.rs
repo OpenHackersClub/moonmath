@@ -14,7 +14,7 @@ pub fn LeanCodeBlock(
     }
 }
 
-fn highlight_lean(code: &str) -> String {
+pub fn highlight_lean(code: &str) -> String {
     let mut out = String::with_capacity(code.len() * 2);
     let chars: Vec<char> = code.chars().collect();
     let len = chars.len();
@@ -134,7 +134,7 @@ fn classify_word(word: &str) -> Option<&'static str> {
     None
 }
 
-fn escape_html(s: &str) -> String {
+pub fn escape_html(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")

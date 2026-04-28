@@ -144,6 +144,9 @@ pub struct ShowcaseDetailResponse {
     /// Pre-highlighted Lean4 code blocks found in the page content
     #[serde(default)]
     pub lean4_blocks: Vec<String>,
+    /// Raw Lean4 source code for each block (for client-side compilation)
+    #[serde(default)]
+    pub lean4_sources: Vec<String>,
 }
 
 /// An entry in the concept index page.

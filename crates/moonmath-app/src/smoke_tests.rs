@@ -5,7 +5,7 @@
 //! These tests start a real Axum server on a random port and use reqwest to
 //! verify that pages render correctly via Leptos streaming SSR.
 //!
-//! Note: pages that load data from `target/site/data/` may show fallback or
+//! Note: pages that load data from `target/ssg-data/` may show fallback or
 //! error states if the SSG hasn't been run (`cargo run -p moonmath-ssg`).
 //! The tests still pass because they check the HTML shell, not dynamic data.
 
@@ -38,6 +38,7 @@ async fn spawn_app() -> String {
     let routes = generate_route_list(App);
 
     let app = Router::new()
+        .route("/api/*tail", axum::routing::post(leptos_axum::handle_server_fns))
         .leptos_routes(&leptos_options, routes, {
             let opts = leptos_options.clone();
             move || shell(opts.clone())
@@ -181,7 +182,7 @@ async fn unknown_route_still_renders_shell() {
 async fn homepage_loads_categories_from_ssg() {
     let data_path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../target/site/data/showcase/categories.json"
+        "/../../target/ssg-data/showcase/categories.json"
     );
     if !std::path::Path::new(data_path).exists() {
         eprintln!("SKIP: SSG data not found — run `cargo run -p moonmath-ssg` first");
@@ -206,7 +207,7 @@ async fn homepage_loads_categories_from_ssg() {
 async fn showcase_detail_loads_content_from_ssg() {
     let data_path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../target/site/data/showcase/number-theory/prime-theorem.json"
+        "/../../target/ssg-data/showcase/number-theory/prime-theorem.json"
     );
     if !std::path::Path::new(data_path).exists() {
         eprintln!("SKIP: SSG data not found — run `cargo run -p moonmath-ssg` first");

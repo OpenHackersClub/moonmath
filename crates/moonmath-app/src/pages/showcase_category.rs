@@ -74,11 +74,11 @@ pub fn ShowcaseCategoryPage() -> impl IntoView {
                             </div>
                         }.into_any()
                     }
-                    Err(e) => {
+                    Err(_) => {
                         view! {
                             <div class="not-found">
                                 <h1>"Category not found"</h1>
-                                <p>{e.to_string()}</p>
+                                <p>"This category doesn't exist or content hasn't been generated yet."</p>
                                 <A href="/showcase" attr:class="feature-link">"Back to showcase"</A>
                             </div>
                         }.into_any()

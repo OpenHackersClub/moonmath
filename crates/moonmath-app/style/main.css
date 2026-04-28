@@ -202,14 +202,28 @@ body {
 .math-display {
     margin: 1.5rem 0;
     overflow-x: auto;
+    overflow-y: hidden;
 }
 
 .math-inline {
-    /* Inline math */
+    /* Inline math — clip oversized KaTeX SVGs (e.g. radical tails with width=400em) */
+    overflow: hidden;
 }
 
 .katex-mathml {
     display: none;
+}
+
+/* Safety net: KaTeX radical SVGs use width="400em" and rely on overflow:hidden
+   from the CDN stylesheet. These rules ensure correct clipping even if the
+   CDN CSS fails to load or has specificity issues. */
+.katex-html {
+    overflow: hidden;
+}
+
+.katex .hide-tail {
+    overflow: hidden;
+    position: relative;
 }
 
 .katex-error {
@@ -434,11 +448,25 @@ body {
 /* ── Lean Code Block ──────────────────────────────────── */
 
 .lean-code-block {
+    position: relative;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 8px;
     overflow-x: auto;
     margin-bottom: 1rem;
+}
+
+.lean-code-block::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(90deg, transparent, var(--color-surface));
+    pointer-events: none;
+    border-radius: 0 8px 8px 0;
+    opacity: 0.8;
 }
 
 .lean-code {
@@ -452,6 +480,20 @@ body {
 
 .lean-code code {
     font-family: inherit;
+}
+
+.lean-compile-bar {
+    padding: 0.5rem 1.25rem 0.75rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.lean-compile-btn {
+    font-size: 0.88rem;
+    padding: 0.4rem 1.2rem;
+}
+
+.lean-compile-btn:disabled {
+    opacity: 0.7;
 }
 
 .lean-kw       { color: #c678dd; font-weight: 600; }
@@ -512,6 +554,8 @@ body {
     border: 1px solid var(--color-error);
     border-radius: 6px;
     padding: 0.75rem 1rem;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .compile-errors-title {
@@ -523,6 +567,20 @@ body {
 .compile-error-list {
     list-style: none;
     padding: 0;
+}
+
+.compile-raw-output {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-error);
+    background: rgba(212, 93, 93, 0.08);
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .compile-error-item {
@@ -774,7 +832,8 @@ body {
 }
 
 .breadcrumb-current {
-    color: var(--color-text-muted);
+    color: var(--color-text);
+    font-weight: 500;
 }
 
 /* ── Category Grid (home + showcase index) ───────────── */
@@ -903,7 +962,7 @@ body {
 .showcase-card-meta {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem 0.5rem;
     flex-wrap: wrap;
 }
 
@@ -974,82 +1033,6 @@ body {
     white-space: nowrap;
 }
 
-/* ── Concept Links & Tooltips ────────────────────────── */
-
-.concept-link-wrapper {
-    position: relative;
-    display: inline;
-}
-
-.concept-link {
-    color: var(--color-accent);
-    text-decoration: none;
-    border-bottom: 1px dotted var(--color-accent);
-    transition: color 0.2s, border-color 0.2s;
-}
-
-.concept-link:hover {
-    color: var(--color-accent-light);
-    border-bottom-color: var(--color-accent-light);
-}
-
-.concept-link-unresolved {
-    color: var(--color-text-muted);
-    border-bottom: 1px dashed var(--color-text-muted);
-    cursor: help;
-}
-
-.concept-tooltip {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    max-width: 90vw;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    z-index: 200;
-    pointer-events: none;
-}
-
-.concept-link-wrapper:hover .concept-tooltip {
-    display: block;
-}
-
-.concept-tooltip-title {
-    display: block;
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: var(--color-text);
-    margin-bottom: 0.35rem;
-}
-
-.concept-tooltip-formula {
-    display: block;
-    margin-bottom: 0.35rem;
-    overflow-x: auto;
-    font-size: 0.9rem;
-}
-
-.concept-tooltip-desc {
-    display: block;
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
-    line-height: 1.5;
-    margin-bottom: 0.5rem;
-}
-
-.concept-tooltip-more {
-    display: inline-block;
-    color: var(--color-accent);
-    font-size: 0.8rem;
-    text-decoration: none;
-}
-
 /* ── Backlinks Section ──────────────────────────────── */
 
 .backlinks-section {
@@ -1094,184 +1077,153 @@ body {
     font-size: 0.85rem;
 }
 
-/* ── Concept Index Page ─────────────────────────────── */
+/* ── Inspirations ────────────────────────────────── */
 
-.concept-index-page {
+.ins-page {
     padding: 1rem 0;
 }
 
-.concept-index-header {
+/* Header — grand, centered, gradient title */
+.ins-header {
     text-align: center;
-    padding-bottom: 2rem;
+    padding-bottom: 2.5rem;
 }
 
-.concept-index-header h1 {
-    font-size: 2.2rem;
-    margin-bottom: 0.5rem;
+.ins-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--color-accent), #9bb7d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
 }
 
-.concept-index-subtitle {
+.ins-subtitle {
     color: var(--color-text-muted);
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    max-width: 500px;
+    margin: 0 auto 1.5rem;
 }
 
-.concept-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+.ins-rule {
+    width: 80px;
+    height: 2px;
+    margin: 0 auto;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
 }
 
-.concept-entry {
+/* Featured plaque — the namesake entry */
+.ins-featured {
+    position: relative;
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 1.25rem;
-    transition: border-color 0.2s;
-}
-
-.concept-entry:hover {
-    border-color: var(--color-accent);
-}
-
-.concept-entry-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.35rem;
-}
-
-.concept-entry-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--color-text);
-    text-decoration: none;
-}
-
-.concept-entry-title:hover {
-    color: var(--color-accent);
-}
-
-.concept-entry-category {
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
-    text-decoration: none;
-    flex-shrink: 0;
-}
-
-.concept-entry-category:hover {
-    color: var(--color-accent);
-}
-
-.concept-entry-desc {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 0.5rem;
-}
-
-.concept-entry-refs {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    font-size: 0.85rem;
-}
-
-.concept-refs-label {
-    color: var(--color-text-muted);
-    flex-shrink: 0;
-}
-
-.concept-refs-list {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.concept-ref-link {
-    color: var(--color-accent);
-    text-decoration: none;
-    font-size: 0.85rem;
-}
-
-.concept-ref-link:hover {
-    text-decoration: underline;
-}
-
-.concept-ref-link + .concept-ref-link::before {
-    content: ", ";
-    color: var(--color-text-muted);
-}
-
-/* ── Inspirations Page ─────────────────────────────── */
-
-.inspirations-page {
-    padding: 1rem 0;
-}
-
-.inspirations-header {
+    border: 1px solid var(--color-accent);
+    border-left: 4px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 2.5rem;
     text-align: center;
-    padding-bottom: 2rem;
+    box-shadow: 0 0 24px rgba(244, 233, 205, 0.06);
 }
 
-.inspirations-header h1 {
-    font-size: 2.2rem;
-    margin-bottom: 0.5rem;
+.ins-featured-badge {
+    display: inline-block;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.2rem 0.7rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
 }
 
-.inspirations-subtitle {
-    color: var(--color-text-muted);
-    font-size: 1.1rem;
+.ins-featured .ins-plaque-name {
+    font-size: 1.6rem;
 }
 
-.inspiration-section {
+.ins-featured .ins-plaque-desc {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Wing — a named section of the hall */
+.ins-wing {
     margin-bottom: 2.5rem;
 }
 
-.inspiration-section h2 {
-    font-size: 1.4rem;
+.ins-wing-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+/* Decorative divider between wings */
+.ins-divider {
+    text-align: center;
     margin-bottom: 1rem;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.3rem;
+    color: var(--color-border);
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
 }
 
-.inspiration-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.25rem;
-}
-
-.inspiration-card {
+/* Plaque — single entry */
+.ins-plaque {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 1.25rem;
-    transition: border-color 0.2s;
+    border-left: 3px solid #c9a84c;
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.2s, box-shadow 0.3s;
 }
 
-.inspiration-card:hover {
+.ins-plaque:hover {
     border-color: var(--color-accent);
+    box-shadow: 0 0 16px rgba(244, 233, 205, 0.05);
 }
 
-.inspiration-card h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+.ins-plaque-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
 }
 
-.inspiration-card h3 a {
+.ins-plaque-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ins-plaque-name a {
     color: var(--color-accent);
     text-decoration: none;
 }
 
-.inspiration-card h3 a:hover {
+.ins-plaque-name a:hover {
     text-decoration: underline;
 }
 
-.inspiration-card p {
+.ins-plaque-year {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
     color: var(--color-text-muted);
-    font-size: 0.9rem;
-    line-height: 1.6;
+    background: var(--color-border);
+    padding: 0.1rem 0.45rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.ins-plaque-desc {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
 }
 
 /* ── Fractal Visualizations ──────────────────────────── */
@@ -1305,6 +1257,7 @@ body {
     border-radius: 10px;
     padding: 1rem;
     transition: border-color 0.2s;
+    overflow: hidden;
 }
 
 .fractal-card:hover {
@@ -1315,6 +1268,8 @@ body {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
     margin-bottom: 0.75rem;
 }
 
@@ -1325,8 +1280,9 @@ body {
 
 .fractal-dimension {
     color: var(--color-text-muted);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-family: var(--font-mono);
+    white-space: nowrap;
 }
 
 .fractal-canvas {
@@ -1349,6 +1305,7 @@ body {
     background: var(--color-border);
     color: var(--color-text);
     border: none;
+    min-width: 32px;
     width: 32px;
     height: 32px;
     border-radius: 6px;
@@ -1358,6 +1315,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: background 0.2s;
 }
 
@@ -1377,9 +1335,17 @@ body {
     color: var(--color-text-muted);
     min-width: 6ch;
     text-align: center;
+    flex-shrink: 0;
 }
 
-/* Responsive */
+/* Responsive — tablet */
+@media (max-width: 900px) {
+    .fractal-viz-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Responsive — mobile */
 @media (max-width: 640px) {
     .hero h1 {
         font-size: 2rem;
@@ -1388,7 +1354,16 @@ body {
         padding: 1rem;
     }
     .site-nav {
+        flex-direction: column;
+        gap: 0.5rem;
         padding: 0.75rem 1rem;
+    }
+    .nav-links {
+        gap: 1rem;
+        font-size: 0.85rem;
+    }
+    .nav-logo {
+        font-size: 1.2rem;
     }
     .layer-nodes {
         flex-direction: column;
@@ -1405,5 +1380,14 @@ body {
     }
     .fractal-viz-grid {
         grid-template-columns: 1fr;
+    }
+    .breadcrumb-list {
+        font-size: 0.8rem;
+    }
+    .ins-title {
+        font-size: 2rem;
+    }
+    .ins-plaque {
+        padding: 1rem;
     }
 }

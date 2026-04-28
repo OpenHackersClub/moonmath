@@ -88,7 +88,7 @@ fn FractalCanvas(
                 <button
                     class="fractal-btn"
                     on:click=move |_| set_depth.update(|d| *d = (*d + 1).min(max_depth))
-                    disabled=move || depth.get() >= max_depth
+                    disabled=move || max_depth <= depth.get()
                 >"+"</button>
             </div>
         </div>

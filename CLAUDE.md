@@ -7,11 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This project uses **cargo-leptos** (v0.3.4+). Install with `cargo install cargo-leptos`.
 
 ```sh
-# Dev server with hot reload (primary development command)
-cargo leptos watch
+# Dev server with hot reload (runs SSG first, then cargo leptos watch)
+cargo dev
 
-# Build for release
-cargo leptos build --release
+# Or run SSG alone to regenerate showcase data
+cargo ssg
 
 # Check SSR build (server)
 cargo check --features ssr -p moonmath-app
@@ -100,6 +100,72 @@ Single stylesheet at `crates/moonmath-app/style/main.css`. Dark theme with CSS v
 
 Full PRD at `specs/prd.md`.
 
+## Development Workflow — Test-Driven & Verify-First
+
+**Every change must be verified before it is considered done.** Follow this checklist after any code change:
+
+### Mandatory verification steps
+
+1. **Both build targets compile:**
+   ```sh
+   cargo check --features ssr -p moonmath-app
+   cargo check --features hydrate -p moonmath-app --target wasm32-unknown-unknown
+   ```
+2. **All tests pass:**
+   ```sh
+   cargo test --features ssr -p moonmath-app   # smoke tests
+   cargo test                                   # full workspace
+   ```
+3. **SSG data is current** (if content/types changed):
+   ```sh
+   cargo run -p moonmath-ssg
+   ```
+4. **Server starts and pages render** (for UI/routing changes):
+   ```sh
+   LEPTOS_OUTPUT_NAME=moonmath-app target/debug/moonmath-app &
+   curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/
+   curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/showcase/number-theory/prime-theorem
+   ```
+
+### Test-driven approach
+
+- **Write tests first** when adding new functionality — or immediately after implementation
+- **Use the test-writer agent** (`.claude/agents/test-writer.md`) after completing feature work
+- **Never assume compilation = correctness** — Leptos SSR builds can compile fine while WASM hydration panics at runtime. Always verify BOTH targets
+- **Hydration hazards**: `use_location()`, `use_params_map()`, and other router hooks MUST be called inside a `<Router>` context. Calling them before `<Router>` renders will panic on hydration and silently break ALL client-side interactivity (compile buttons, fractal canvases, etc.)
+- **`#[cfg(feature = "hydrate")]` blocks** that use router hooks should be in components rendered INSIDE `<Router>`, not in the `App` component before `<Router>`
+
+### When using team agents
+
+After parallel agents finish, **always run the full verification checklist** in the main context. Agents edit files independently and may introduce cross-file issues (e.g., one agent's change causes another's code to break at hydration time).
+
 ## File Creation Rules
 
 When creating or writing `.lean`, `.md`, `.rs`, or any other content files, always use the **Write** tool (or **Edit** tool for modifications) instead of `cat`, `echo`, or heredoc via Bash. This avoids unnecessary permission prompts and keeps file operations trackable.
+
+## Team Agents
+
+For multi-file or cross-concern tasks, prefer spawning a team of agents to work in parallel. Suggested roles mapped to this codebase:
+
+| Agent name | Scope | Typical files |
+|---|---|---|
+| **rust-components** | Leptos pages, components, server functions | `crates/moonmath-app/src/pages/`, `crates/moonmath-app/src/components/` |
+| **styling** | CSS, layout, responsive design, theming | `crates/moonmath-app/style/main.css` |
+| **content-pipeline** | Markdown processing, frontmatter, KaTeX math | `crates/moonmath-content/`, `crates/moonmath-math/`, `content/` |
+| **lean-tooling** | Lean4 compiler integration, LeanTeX | `crates/moonmath-lean/` |
+| **build-verify** | Run `cargo check --features ssr`, WASM check, `cargo test` | (read-only, Bash only) |
+| **test-writer** | Write and run tests for any new/changed code | All `#[cfg(test)]` modules, `smoke_tests.rs` |
+| **ux-reviewer** | Design consistency, theme compliance, responsive layout | `crates/moonmath-app/style/main.css`, all pages + components |
+
+### When to use a team
+
+- Any task touching **both** Rust components and CSS (e.g., new page, redesign)
+- Feature work spanning **3+ crates** (e.g., adding a new showcase with content + rendering + UI)
+- Large refactors where build verification should run continuously alongside edits
+
+### How to structure
+
+1. Create tasks with `TaskCreate` for each concern (Rust, CSS, content, etc.)
+2. Spawn agents with `Task` tool using `team_name` — assign `subagent_type="general-purpose"` for edit work, `subagent_type="Bash"` for build-verify
+3. The **build-verify** agent should run `cargo check --features ssr -p moonmath-app` and `cargo check --features hydrate -p moonmath-app --target wasm32-unknown-unknown` after teammates finish edits
+4. Keep CSS and Rust agents independent — they touch different files and can always run in parallel

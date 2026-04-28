@@ -4,8 +4,29 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
 
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
+use crate::components::compile_panel::CompilePanel;
 use crate::components::fractal_canvas::FractalVisualizations;
 use crate::fetch::json_resource;
+
+#[server(CompileLean, "/api")]
+pub async fn compile_lean(code: String) -> Result<moonmath_types::CompileResponse, ServerFnError> {
+    use moonmath_lean::compiler::LeanCompiler;
+    use moonmath_lean::leantex::lean_to_latex;
+    use moonmath_types::CompileRequest;
+
+    let compiler = LeanCompiler::with_defaults();
+    let mut response = compiler
+        .compile(CompileRequest { code: code.clone() })
+        .await
+        .map_err(|e| ServerFnError::new(e.to_string()))?;
+
+    let latex = lean_to_latex(&code);
+    if !latex.is_empty() {
+        response.latex = Some(latex);
+    }
+
+    Ok(response)
+}
 
 #[component]
 pub fn ShowcaseDetailPage() -> impl IntoView {
@@ -34,6 +55,7 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                         let cat_for_nav = data.category_slug.clone();
                         let cat_for_next = data.category_slug.clone();
                         let lean4_blocks = data.lean4_blocks.clone();
+                        let lean4_sources = data.lean4_sources.clone();
                         let has_fractal_viz =
                             data.tags.iter().any(|t| t == "fractal")
                             && data.tags.iter().any(|t| t == "visualization");
@@ -71,16 +93,44 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                                 // Fractal visualizations (for pages tagged fractal + visualization)
                                 {has_fractal_viz.then(|| view! { <FractalVisualizations/> })}
 
-                                // Lean4 code blocks
+                                // Lean4 code blocks (interactive with compile button)
                                 {(!lean4_blocks.is_empty()).then(|| {
                                     let blocks = lean4_blocks.clone();
+                                    let sources = lean4_sources.clone();
                                     view! {
                                         <section class="lean4-section">
                                             <h2>"Lean4 Proof"</h2>
-                                            {blocks.into_iter().map(|highlighted| {
+                                            {blocks.into_iter().zip(sources.into_iter()).map(|(highlighted, source)| {
+                                                let (compile_result, set_compile_result) = signal::<Option<Result<moonmath_types::CompileResponse, String>>>(None);
+                                                let (compiling, set_compiling) = signal(false);
+                                                let source_for_click = source.clone();
+                                                let on_compile = move |_| {
+                                                    let code = source_for_click.clone();
+                                                    set_compiling.set(true);
+                                                    set_compile_result.set(None);
+                                                    leptos::task::spawn_local(async move {
+                                                        let result = compile_lean(code).await;
+                                                        set_compile_result.set(Some(result.map_err(|e| e.to_string())));
+                                                        set_compiling.set(false);
+                                                    });
+                                                };
                                                 view! {
                                                     <div class="lean-code-block">
                                                         <pre class="lean-code"><code inner_html=highlighted/></pre>
+                                                        <div class="lean-compile-bar">
+                                                            <button
+                                                                class="compile-btn lean-compile-btn"
+                                                                on:click=on_compile
+                                                                disabled=move || compiling.get()
+                                                            >
+                                                                {move || if compiling.get() {
+                                                                    "Compiling...".to_string()
+                                                                } else {
+                                                                    "Compile Proof".to_string()
+                                                                }}
+                                                            </button>
+                                                        </div>
+                                                        <CompilePanel result=compile_result/>
                                                     </div>
                                                 }
                                             }).collect_view()}

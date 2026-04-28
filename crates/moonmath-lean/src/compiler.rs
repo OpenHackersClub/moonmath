@@ -171,20 +171,29 @@ impl LeanCompiler {
 
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let errors = parse_lean_errors(&stderr);
+
+        // Lean 4 outputs diagnostics to stdout, not stderr.
+        // Parse both to be safe.
+        let mut errors = parse_lean_errors(&stdout);
+        errors.extend(parse_lean_errors(&stderr));
 
         let success = output.status.success()
             && !errors
                 .iter()
                 .any(|e| matches!(e.severity, ErrorSeverity::Error));
 
+        // When compilation fails but no structured errors were parsed,
+        // include raw output so the user sees what went wrong.
+        let output_text = if !success && errors.is_empty() {
+            let combined = format!("{}{}", stdout, stderr);
+            if combined.is_empty() { None } else { Some(combined) }
+        } else {
+            None
+        };
+
         Ok(CompileResponse {
             success,
-            output: if stdout.is_empty() {
-                None
-            } else {
-                Some(stdout.into_owned())
-            },
+            output: output_text,
             errors,
             latex: None,
         })
