@@ -16,7 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-        curl ca-certificates git \
+        curl ca-certificates git unzip \
  && rm -rf /var/lib/apt/lists/*
 
 # Install elan (the Lean toolchain manager) and pin to the project's Lean.
