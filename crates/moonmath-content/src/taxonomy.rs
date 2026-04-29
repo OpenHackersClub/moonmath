@@ -69,7 +69,7 @@ mod tests {
             date: None,
             tags: Vec::new(),
             category: None,
-            difficulty: None,
+            premier: false,
             interactive: None,
             latex: None,
             draft: false,

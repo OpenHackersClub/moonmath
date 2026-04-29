@@ -2,7 +2,6 @@
 title = "Fundamental Theorem of Arithmetic"
 description = "Every integer greater than 1 has a unique prime factorization"
 weight = 20
-difficulty = "introductory"
 tags = ["lean4-proof", "number-theory"]
 latex = "n = p_1^{a_1} \\cdot p_2^{a_2} \\cdots p_k^{a_k}"
 prerequisites = ["prime-theorem"]

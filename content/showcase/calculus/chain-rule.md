@@ -3,7 +3,7 @@ title = "Chain Rule"
 description = "Differentiate composite functions by peeling layers"
 weight = 10
 tags = ["calculus", "derivatives"]
-difficulty = "intermediate"
+premier = true
 latex = "\\frac{d}{dx}[f(g(x))] = f'(g(x)) \\cdot g'(x)"
 +++
 

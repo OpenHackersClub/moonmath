@@ -3,7 +3,6 @@ title = "Quicksort"
 date = "2026-01-20"
 tags = ["sorting", "divide-and-conquer", "comparison-sort"]
 category = "sorting"
-difficulty = "intermediate"
 interactive = "algo_viz::quicksort"
 +++
 

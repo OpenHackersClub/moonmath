@@ -2,7 +2,6 @@
 title = "Hausdorff Dimension"
 description = "Measuring the fractional dimension of self-similar sets"
 weight = 20
-difficulty = "intermediate"
 tags = ["visualization", "fractal"]
 latex = "d = \\frac{\\log N}{\\log (1/r)}"
 prerequisites = []

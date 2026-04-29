@@ -174,13 +174,15 @@ a:hover {
     margin-bottom: 1.5rem;
 }
 
-.difficulty-badge {
+.premier-badge {
     background: var(--color-accent);
     color: var(--color-on-accent);
     padding: 0.2rem 0.6rem;
     border-radius: 4px;
-    font-size: 0.8rem;
-    text-transform: capitalize;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .tags {

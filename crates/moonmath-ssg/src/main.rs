@@ -183,7 +183,7 @@ fn generate_showcase_pages(
                 title: page.frontmatter.title,
                 latex_html,
                 html,
-                difficulty: page.frontmatter.difficulty,
+                premier: page.frontmatter.premier,
                 tags: page.frontmatter.tags,
                 prev,
                 next,

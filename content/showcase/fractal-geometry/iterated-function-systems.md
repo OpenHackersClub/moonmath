@@ -2,7 +2,6 @@
 title = "Iterated Function Systems"
 description = "Constructing fractals via contractive affine transformations"
 weight = 30
-difficulty = "intermediate"
 tags = ["interactive", "visualization", "fractal"]
 latex = "A = \\bigcup_{i=1}^{N} f_i(A)"
 prerequisites = ["hausdorff-dimension"]

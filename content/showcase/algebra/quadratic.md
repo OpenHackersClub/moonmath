@@ -3,7 +3,7 @@ title = "Quadratic Formula"
 description = "Solve any quadratic equation using the discriminant"
 weight = 10
 tags = ["algebra", "polynomials", "equations"]
-difficulty = "beginner"
+premier = true
 latex = "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
 +++
 
