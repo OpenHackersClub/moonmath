@@ -105,12 +105,16 @@ jobs:
             echo "::warning::Cloudflare secrets not configured — deploy step will be skipped. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to the repo to enable deploys."
           fi
 
-      # `wranglerVersion` is required: wrangler-action's default (3.90.0)
-      # predates Cloudflare Containers support, so it silently drops the
-      # `[[containers]]` block in wrangler.toml and the LEAN_COMPILER DO ends
-      # up bound but with no container behind it ("Containers have not been
-      # enabled for this Durable Object class"). Pin to the worker/package.json
-      # version which does process [[containers]].
+      # `wranglerVersion` is required for two reasons:
+      #   1. wrangler-action's default (3.90.0) predates Cloudflare Containers,
+      #      so it silently drops `[[containers]]` and the LEAN_COMPILER DO
+      #      ends up bound with no container behind it.
+      #   2. wrangler 3.114.0 (worker/package.json's previous pin) is itself
+      #      broken — it ships a deprecation warning ("Deployments with
+      #      nodejs_compat are broken") and rejects `[[containers]]` with
+      #      "containers should be an object, but got an array".
+      # Wrangler 4.x is where Containers are GA and the documented array
+      # syntax works again.
       - name: Deploy preview Worker
         id: deploy_preview
         if: steps.target.outputs.kind == 'preview' && steps.target.outputs.creds == 'true'
@@ -118,7 +122,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "3.114.0"
+          wranglerVersion: "4.86.0"
           command: deploy --name ${{ steps.target.outputs.name }}
 
       - name: Deploy production Worker
@@ -128,7 +132,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "3.114.0"
+          wranglerVersion: "4.86.0"
           command: deploy
 
       # ─── Acceptance ──────────────────────────────────────────────────────

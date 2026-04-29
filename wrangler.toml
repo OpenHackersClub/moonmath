@@ -77,10 +77,11 @@ new_sqlite_classes = ["LeanCompiler"]
 [[containers]]
 class_name = "LeanCompiler"
 image = "./services/lean/Dockerfile"
-# `standard` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
-# Drop to `basic` once the v0 image is profiled; raise to `enhanced` when
-# Mathlib lands (v0.2.6) and compile memory headroom matters.
-instance_type = "standard"
+# `standard-1` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
+# Drop to `basic` once the v0 image is profiled; raise to a larger tier when
+# Mathlib lands (v0.2.6) and compile memory headroom matters. Wrangler 4.x
+# renamed the legacy "standard" tier to "standard-1".
+instance_type = "standard-1"
 # Cap concurrent instances so a traffic spike can't blow the bill. With
 # sleepAfter=10m most demos serve from a single warm instance.
 max_instances = 5
