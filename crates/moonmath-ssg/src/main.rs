@@ -158,9 +158,14 @@ fn generate_showcase_pages(
                     .unwrap_or_else(|e| format!("<span class=\"katex-error\">{}</span>", e))
             });
 
-            // Extract and highlight Lean4 blocks
-            let lean4_sources: Vec<String> =
-                lean_highlight::extract_lean4_blocks(&page.source);
+            // Extract and highlight Lean4 blocks. Drop any block containing
+            // `sorry` — we don't showcase incomplete proofs. This keeps the
+            // compile button honest: every visible Lean4 block must be a
+            // proof Lean accepts without holes.
+            let lean4_sources: Vec<String> = lean_highlight::extract_lean4_blocks(&page.source)
+                .into_iter()
+                .filter(|code| !contains_sorry_keyword(code))
+                .collect();
             let lean4_blocks: Vec<String> = lean4_sources
                 .iter()
                 .map(|code| lean_highlight::highlight_lean(code))
@@ -225,4 +230,30 @@ fn generate_index_html() {
 fn write_json<T: serde::Serialize>(path: &Path, data: &T) {
     let json = serde_json::to_string_pretty(data).expect("serialize JSON");
     fs::write(path, json).expect("write JSON file");
+}
+
+/// Whether the Lean code uses `sorry` as a token (not as a substring of a
+/// longer identifier like `sorry_proof`).
+fn contains_sorry_keyword(code: &str) -> bool {
+    code.split(|c: char| !c.is_alphanumeric() && c != '_')
+        .any(|tok| tok == "sorry")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::contains_sorry_keyword;
+
+    #[test]
+    fn detects_bare_sorry() {
+        assert!(contains_sorry_keyword("theorem t : True := sorry"));
+        assert!(contains_sorry_keyword("  sorry -- TODO"));
+        assert!(contains_sorry_keyword("· sorry\n· rfl"));
+    }
+
+    #[test]
+    fn ignores_substrings() {
+        assert!(!contains_sorry_keyword("def sorry_proof := True"));
+        assert!(!contains_sorry_keyword("-- I'm sorry_about_this"));
+        assert!(!contains_sorry_keyword("theorem t : True := trivial"));
+    }
 }
