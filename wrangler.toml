@@ -46,6 +46,46 @@ LEAN_REQUEST_MAX_BYTES = "32768"
 # id = "TODO-replace-with-output-of-wrangler-kv-namespace-create"
 # preview_id = "TODO-replace-with-output-of-wrangler-kv-namespace-create-preview"
 
+# Successful-compile cache for /api/CompileLean, keyed by sha256(code). Demos
+# replay the same proof many times — caching dodges the container roundtrip
+# and keeps p95 latency ~30ms after the first hit. Provision with:
+#   wrangler kv namespace create LEAN_CACHE
+#   wrangler kv namespace create LEAN_CACHE --preview
+# [[kv_namespaces]]
+# binding = "LEAN_CACHE"
+# id = "TODO-replace-with-output-of-wrangler-kv-namespace-create"
+# preview_id = "TODO-replace-with-output-of-wrangler-kv-namespace-create-preview"
+
+# ─── Lean compile container ──────────────────────────────────────────────────
+#
+# The Worker dispatches POST /api/CompileLean to this container, which runs
+# `lean` via the tiny HTTP wrapper in services/lean/server.ts. See
+# docs/lean-service.md for the full architecture and cost model.
+#
+# The container image is built from services/lean/Dockerfile by `wrangler
+# deploy` (no separate registry push needed for the Cloudflare-managed
+# registry). On first deploy Cloudflare provisions the Durable Object class
+# and uploads the image; subsequent deploys are diff-only.
+
+[[durable_objects.bindings]]
+name = "LEAN_COMPILER"
+class_name = "LeanCompiler"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LeanCompiler"]
+
+[[containers]]
+class_name = "LeanCompiler"
+image = "./services/lean/Dockerfile"
+# `standard` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
+# Drop to `basic` once the v0 image is profiled; raise to `enhanced` when
+# Mathlib lands (v0.2.6) and compile memory headroom matters.
+instance_type = "standard"
+# Cap concurrent instances so a traffic spike can't blow the bill. With
+# sleepAfter=10m most demos serve from a single warm instance.
+max_instances = 5
+
 # Local dev: `wrangler dev` serves the same Worker against ./dist on :8787.
 [dev]
 port = 8787

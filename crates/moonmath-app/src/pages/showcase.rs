@@ -113,7 +113,7 @@ pub fn PrimeShowcasePage() -> impl IntoView {
                                 }}
                             </button>
                         </div>
-                        <CompilePanel result=compile_result/>
+                        <CompilePanel result=compile_result compiling=compiling/>
                     }
                 }
             </section>

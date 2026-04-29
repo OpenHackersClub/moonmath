@@ -11,6 +11,9 @@
     "typecheck": "tsc --noEmit",
     "tail": "wrangler tail"
   },
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.3"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250404.0",
     "typescript": "^5.4.5",

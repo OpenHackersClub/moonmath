@@ -134,6 +134,12 @@ fn generate_showcase_pages(
                 },
             );
 
+            // The interactive `<section class="lean4-section">` rendered by
+            // ShowcaseDetailPage already shows a syntax-highlighted code
+            // block plus a Compile button — drop the duplicate markdown-
+            // rendered "## Lean4 Proof" heading + `<pre>...lean4...</pre>`.
+            let html = strip_markdown_lean4_section(&html);
+
             // Prev/next
             let prev = if idx > 0 {
                 let p = &siblings[idx - 1];
@@ -158,9 +164,14 @@ fn generate_showcase_pages(
                     .unwrap_or_else(|e| format!("<span class=\"katex-error\">{}</span>", e))
             });
 
-            // Extract and highlight Lean4 blocks
-            let lean4_sources: Vec<String> =
-                lean_highlight::extract_lean4_blocks(&page.source);
+            // Extract and highlight Lean4 blocks. Drop any block containing
+            // `sorry` — we don't showcase incomplete proofs. This keeps the
+            // compile button honest: every visible Lean4 block must be a
+            // proof Lean accepts without holes.
+            let lean4_sources: Vec<String> = lean_highlight::extract_lean4_blocks(&page.source)
+                .into_iter()
+                .filter(|code| !contains_sorry_keyword(code))
+                .collect();
             let lean4_blocks: Vec<String> = lean4_sources
                 .iter()
                 .map(|code| lean_highlight::highlight_lean(code))
@@ -225,4 +236,92 @@ fn generate_index_html() {
 fn write_json<T: serde::Serialize>(path: &Path, data: &T) {
     let json = serde_json::to_string_pretty(data).expect("serialize JSON");
     fs::write(path, json).expect("write JSON file");
+}
+
+/// Whether the Lean code uses `sorry` as a token (not as a substring of a
+/// longer identifier like `sorry_proof`).
+fn contains_sorry_keyword(code: &str) -> bool {
+    code.split(|c: char| !c.is_alphanumeric() && c != '_')
+        .any(|tok| tok == "sorry")
+}
+
+/// Strip the markdown-rendered Lean4 section from a page's HTML so the
+/// interactive component is the only place readers see the proof.
+///
+/// Removes any `<h2>Lean4 Proof</h2>` heading and every following
+/// `<pre><code class="language-lean4">...</code></pre>` block, including
+/// any whitespace between them.
+fn strip_markdown_lean4_section(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+
+    while let Some(idx) = rest.find("<pre><code class=\"language-lean4\">") {
+        // Look back through any whitespace + an optional `<h2>Lean4 Proof</h2>`.
+        let before = &rest[..idx];
+        let trimmed_end = before.trim_end_matches(|c: char| c.is_whitespace());
+        let drop_heading_len = if let Some(stripped) =
+            trimmed_end.strip_suffix("<h2>Lean4 Proof</h2>")
+        {
+            before.len() - stripped.len()
+        } else {
+            0
+        };
+        out.push_str(&before[..before.len() - drop_heading_len]);
+
+        // Skip past the closing </code></pre>.
+        let after_open = &rest[idx..];
+        if let Some(close_rel) = after_open.find("</code></pre>") {
+            rest = &after_open[close_rel + "</code></pre>".len()..];
+        } else {
+            // Malformed — keep the rest as-is to avoid silent loss.
+            out.push_str(after_open);
+            return out;
+        }
+    }
+
+    out.push_str(rest);
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{contains_sorry_keyword, strip_markdown_lean4_section};
+
+    #[test]
+    fn detects_bare_sorry() {
+        assert!(contains_sorry_keyword("theorem t : True := sorry"));
+        assert!(contains_sorry_keyword("  sorry -- TODO"));
+        assert!(contains_sorry_keyword("· sorry\n· rfl"));
+    }
+
+    #[test]
+    fn ignores_substrings() {
+        assert!(!contains_sorry_keyword("def sorry_proof := True"));
+        assert!(!contains_sorry_keyword("-- I'm sorry_about_this"));
+        assert!(!contains_sorry_keyword("theorem t : True := trivial"));
+    }
+
+    #[test]
+    fn strips_lean4_heading_and_block() {
+        let html = "<p>intro</p>\n<h2>Lean4 Proof</h2>\n<pre><code class=\"language-lean4\">theorem t := rfl</code></pre>\n<p>after</p>";
+        let stripped = strip_markdown_lean4_section(html);
+        assert!(!stripped.contains("Lean4 Proof"));
+        assert!(!stripped.contains("language-lean4"));
+        assert!(stripped.contains("<p>intro</p>"));
+        assert!(stripped.contains("<p>after</p>"));
+    }
+
+    #[test]
+    fn strips_multiple_blocks() {
+        let html = "<h2>Lean4 Proof</h2>\n<pre><code class=\"language-lean4\">a</code></pre>\n<pre><code class=\"language-lean4\">b</code></pre>\n<p>end</p>";
+        let stripped = strip_markdown_lean4_section(html);
+        assert!(!stripped.contains("language-lean4"));
+        assert!(stripped.contains("<p>end</p>"));
+    }
+
+    #[test]
+    fn leaves_html_without_lean4_alone() {
+        let html = "<h2>Statement</h2><p>just prose</p>";
+        assert_eq!(strip_markdown_lean4_section(html), html);
+    }
 }

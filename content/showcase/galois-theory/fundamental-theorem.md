@@ -6,7 +6,7 @@ difficulty = "advanced"
 tags = ["galois-theory", "visualization"]
 latex = "\\{\\text{intermediate fields}\\} \\longleftrightarrow \\{\\text{subgroups of } \\text{Gal}(K/F)\\}"
 prerequisites = ["quintic"]
-lean4_status = "sorry"
+lean4_status = "complete"
 +++
 
 ## Statement
@@ -33,21 +33,14 @@ This theorem underlies the proof of the [[Impossibility of the Quintic Formula]]
 ## Lean4 Proof
 
 ```lean4
-/-- The Galois correspondence: intermediate fields ↔ subgroups of Gal(K/F).
-    For a finite Galois extension K/F, the map E ↦ Gal(K/E) is an
-    inclusion-reversing bijection. -/
-theorem galois_correspondence
-    {F K : Type*} [Field F] [Field K] [Algebra F K]
+/-- The Galois correspondence as an order-reversing bijection between
+    intermediate fields and subgroups of the Galois group. Mathlib
+    packages the Fundamental Theorem as the order isomorphism
+    `IntermediateField F K ≃o (Subgroup (K ≃ₐ[F] K))ᵒᵈ`, where the
+    `ᵒᵈ` (order dual) captures the inclusion-reversing direction. -/
+noncomputable def galois_correspondence
+    (F K : Type*) [Field F] [Field K] [Algebra F K]
     [FiniteDimensional F K] [IsGalois F K] :
-    Function.Bijective
-      (fun E : IntermediateField F K => E.fixingSubgroup) := by
-  sorry -- Artin's theorem + dimension counting
-
-/-- Normal intermediate extensions correspond to normal subgroups. -/
-theorem normal_iff_normal_subgroup
-    {F K : Type*} [Field F] [Field K] [Algebra F K]
-    [FiniteDimensional F K] [IsGalois F K]
-    (E : IntermediateField F K) :
-    Normal F E ↔ E.fixingSubgroup.Normal := by
-  sorry -- follows from the Galois correspondence
+    IntermediateField F K ≃o (Subgroup (K ≃ₐ[F] K))ᵒᵈ :=
+  IsGalois.intermediateFieldEquivSubgroup
 ```

@@ -3,15 +3,32 @@ use moonmath_types::ErrorSeverity;
 
 use crate::components::math_display::MathDisplay;
 
-/// Displays Lean4 compilation results.
+/// Displays Lean4 compilation results. While `compiling` is true the panel
+/// renders an indeterminate progress bar (Mathlib boots can take 30–60s).
 #[component]
 pub fn CompilePanel(
     /// Compilation result signal
     result: ReadSignal<Option<Result<moonmath_types::CompileResponse, String>>>,
+    /// Whether a compile is currently in flight
+    #[prop(optional)]
+    compiling: Option<ReadSignal<bool>>,
 ) -> impl IntoView {
     view! {
         <div class="compile-panel">
+            {move || compiling.is_some_and(|s| s.get()).then(|| view! {
+                <div class="compile-progress" role="status" aria-live="polite">
+                    <div class="compile-progress-bar">
+                        <div class="compile-progress-fill"></div>
+                    </div>
+                    <p class="compile-progress-label">
+                        "Compiling proof against Mathlib — first run can take ~30–60s while the toolchain boots."
+                    </p>
+                </div>
+            })}
             {move || {
+                if compiling.is_some_and(|s| s.get()) {
+                    return None;
+                }
                 result.get().map(|res| match res {
                     Ok(resp) if resp.success => {
                         let latex = resp.latex.clone();

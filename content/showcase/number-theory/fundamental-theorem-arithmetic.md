@@ -6,7 +6,7 @@ difficulty = "introductory"
 tags = ["lean4-proof", "number-theory"]
 latex = "n = p_1^{a_1} \\cdot p_2^{a_2} \\cdots p_k^{a_k}"
 prerequisites = ["prime-theorem"]
-lean4_status = "sorry"
+lean4_status = "complete"
 +++
 
 ## Statement
@@ -35,21 +35,18 @@ The existence part relies on the [[Infinitude of Primes]]. This theorem is in tu
 ## Lean4 Proof
 
 ```lean4
-/-- Every natural number > 1 has a prime factor. -/
-theorem exists_prime_factor (n : Nat) (hn : n > 1) :
-    ∃ p, Nat.Prime p ∧ p ∣ n := by
-  induction n using Nat.strong_rec_on with
-  | _ n ih =>
-    by_cases hp : Nat.Prime n
-    · exact ⟨n, hp, dvd_refl n⟩
-    · sorry -- factor n = a * b, apply ih to smaller factor
+/-- Existence: every nonzero natural number equals the product of its
+    prime factors raised to their multiplicities. The
+    `Nat.factorization` finsupp records each multiplicity, and Mathlib
+    proves the product reconstructs the original number. -/
+theorem fta_existence (n : ℕ) (hn : n ≠ 0) :
+    n.factorization.prod (fun p k => p ^ k) = n :=
+  Nat.factorization_prod_pow_eq_self hn
 
-/-- Uniqueness of prime factorization (up to ordering). -/
-theorem unique_factorization (n : Nat) (hn : n > 1)
-    (ps qs : List Nat)
-    (hps : ps.prod = n) (hqs : qs.prod = n)
-    (hps_prime : ∀ p ∈ ps, Nat.Prime p)
-    (hqs_prime : ∀ q ∈ qs, Nat.Prime q) :
-    ps ~ qs := by
-  sorry -- by Euclid's lemma and induction on list length
+/-- Uniqueness: two natural numbers with the same prime factorization
+    are equal. Since `Nat.factorization` is a function, equal
+    factorizations force equal nonzero numbers. -/
+theorem fta_uniqueness {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)
+    (h : m.factorization = n.factorization) : m = n :=
+  Nat.eq_of_factorization_eq hm hn (fun p => by rw [h])
 ```

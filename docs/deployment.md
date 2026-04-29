@@ -6,16 +6,21 @@ Implements the deployment target defined in `specs/prd.md` → "Deployment (Clou
 
 A single Cloudflare Worker that
 
-1. serves the prerendered SSG output from Workers Static Assets (`dist/`), and
-2. exposes an optional `POST /api/lean/compile` fallback that proxies to a managed Lean service when configured.
+1. serves the prerendered SSG output from Workers Static Assets (`dist/`),
+2. dispatches `POST /api/CompileLean` (the `compile_lean` server fn) to a Cloudflare Container running Lean — see [`docs/lean-service.md`](./lean-service.md), and
+3. exposes a raw `POST /api/lean/compile` proxy for non-Leptos callers (legacy of v0.2.5; same container).
 
 ```
 repo/
-├── wrangler.toml              # Worker config (Static Assets + envs)
+├── wrangler.toml              # Worker config (Static Assets + container + envs)
 ├── worker/
-│   ├── src/index.ts           # Worker entrypoint (TS shim)
-│   ├── package.json           # wrangler + @cloudflare/workers-types
+│   ├── src/index.ts           # Worker entrypoint (routing, KV cache)
+│   ├── src/lean-compiler.ts   # Container Durable Object class
+│   ├── package.json           # wrangler + @cloudflare/containers
 │   └── tsconfig.json
+├── services/lean/
+│   ├── Dockerfile             # Lean toolchain + Bun HTTP wrapper
+│   └── server.ts              # POST /compile { code } → CompileResponse JSON
 ├── scripts/prerender.sh       # SSR → static HTML stop-gap (until v0.1.7)
 ├── .github/workflows/deploy.yml
 └── dist/                      # Built locally or in CI; gitignored
@@ -35,8 +40,10 @@ The script will be deleted once v0.1.7 lands.
 2. **Repo secrets.** Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to GitHub Actions secrets.
 3. **Worker deps.** `cd worker && npm install`
 4. **(Optional) Rate-limit KV.** `npx wrangler kv namespace create LEAN_RATE_LIMIT` and paste the printed `id` / `preview_id` into `wrangler.toml` (uncomment the `[[kv_namespaces]]` block).
-5. **(Optional) Lean fallback URL.** `npx wrangler secret put LEAN_FALLBACK_URL --env production`. Without it, `POST /api/lean/compile` returns `503 fallback_disabled` — the in-browser WASM compiler is the primary path either way.
+5. **(Optional) Compile-cache KV.** `npx wrangler kv namespace create LEAN_CACHE` and `... --preview`; paste both ids into the `LEAN_CACHE` block in `wrangler.toml`. Without it `/api/CompileLean` still works but every request hits the container.
 6. **(Optional) Custom domain.** Uncomment the `routes = [...]` line under `[env.production]` in `wrangler.toml` once the zone is set up. Until then deploys land on the `*.workers.dev` subdomain.
+
+The `LeanCompiler` Durable Object + container image are provisioned automatically by `wrangler deploy` — no separate registry push.
 
 ## Local commands
 
