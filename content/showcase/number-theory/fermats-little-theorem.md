@@ -6,7 +6,7 @@ difficulty = "intermediate"
 tags = ["lean4-proof", "number-theory", "modular-arithmetic"]
 latex = "a^p \\equiv a \\pmod{p}"
 prerequisites = ["fundamental-theorem-arithmetic"]
-lean4_status = "sorry"
+lean4_status = "complete"
 +++
 
 ## Statement
@@ -36,15 +36,14 @@ This theorem builds on the [[Fundamental Theorem of Arithmetic]] and is a key in
 ## Lean4 Proof
 
 ```lean4
-/-- The number of length-p strings over a symbols is a^p.
-    Constant strings account for a of them; the rest form
-    orbits of size p under cyclic rotation (since p is prime). -/
-theorem necklace_count (a p : Nat) (hp : Nat.Prime p) :
-    p ∣ (a ^ p - a) := by
-  sorry -- by counting necklaces: (a^p - a) non-constant strings, each orbit has size p
+/-- Fermat's little theorem: in `ZMod p`, every element raised to the
+    p-th power is itself. Mathlib bundles the necklace-counting argument
+    (and the polynomial-identity argument) into `ZMod.pow_card`. -/
+theorem fermat_little (p : ℕ) [Fact p.Prime] (a : ZMod p) : a ^ p = a :=
+  ZMod.pow_card a
 
-/-- Fermat's little theorem: a^p ≡ a (mod p) for prime p. -/
-theorem fermat_little (a : Nat) (p : Nat) (hp : Nat.Prime p) :
-    a ^ p % p = a % p := by
-  sorry -- follows from necklace_count
+/-- Equivalent form for nonzero residues: `a^(p-1) = 1`. -/
+theorem fermat_little_nonzero (p : ℕ) [Fact p.Prime] {a : ZMod p}
+    (ha : a ≠ 0) : a ^ (p - 1) = 1 :=
+  ZMod.pow_card_sub_one_eq_one ha
 ```

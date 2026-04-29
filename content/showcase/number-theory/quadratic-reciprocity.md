@@ -6,7 +6,7 @@ difficulty = "advanced"
 tags = ["number-theory", "modular-arithmetic"]
 latex = "\\left(\\frac{p}{q}\\right)\\left(\\frac{q}{p}\\right) = (-1)^{\\frac{p-1}{2}\\cdot\\frac{q-1}{2}}"
 prerequisites = ["fermats-little-theorem"]
-lean4_status = "sorry"
+lean4_status = "complete"
 +++
 
 ## Statement
@@ -38,15 +38,13 @@ The proof relies on [[Fermat's Little Theorem]]. Some modern proofs use ideas fr
 ## Lean4 Proof
 
 ```lean4
-/-- Legendre symbol: 1 if a is a quadratic residue mod p, -1 otherwise. -/
-def legendreSymbol (a : Int) (p : Nat) (hp : Nat.Prime p) (hp2 : p ≠ 2) : Int :=
-  sorry -- defined via Euler's criterion: a^((p-1)/2) mod p
-
-/-- Quadratic reciprocity: (p/q)(q/p) = (-1)^((p-1)/2 · (q-1)/2). -/
-theorem quadratic_reciprocity (p q : Nat)
-    (hp : Nat.Prime p) (hq : Nat.Prime q)
-    (hp2 : p ≠ 2) (hq2 : q ≠ 2) (hpq : p ≠ q) :
-    legendreSymbol (↑p) q hq hq2 * legendreSymbol (↑q) p hp hp2 =
-      (-1) ^ ((p - 1) / 2 * ((q - 1) / 2)) := by
-  sorry -- Gauss's "golden theorem"
+/-- Quadratic reciprocity for distinct odd primes. The Legendre symbol
+    `legendreSym p q` is Mathlib's `(a/p)` defined via Euler's
+    criterion. For odd `p`, the integer division `p / 2` equals
+    `(p-1) / 2`, so the exponent matches the textbook form
+    `((p-1)/2) · ((q-1)/2)`. -/
+theorem quadratic_reciprocity {p q : ℕ} [Fact p.Prime] [Fact q.Prime]
+    (hp : p ≠ 2) (hq : q ≠ 2) (hpq : p ≠ q) :
+    legendreSym q p * legendreSym p q = (-1) ^ (p / 2 * (q / 2)) :=
+  legendreSym.quadratic_reciprocity hp hq hpq
 ```
