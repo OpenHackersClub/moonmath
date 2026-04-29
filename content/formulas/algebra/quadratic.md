@@ -3,7 +3,6 @@ title = "Quadratic Formula"
 date = "2026-01-10"
 tags = ["algebra", "polynomials", "equations"]
 category = "algebra"
-difficulty = "beginner"
 interactive = "formula_viz::quadratic"
 latex = "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
 +++

@@ -2,7 +2,7 @@
 title = "Infinitude of Primes"
 description = "Euclid's classic proof that there are infinitely many prime numbers"
 weight = 10
-difficulty = "introductory"
+premier = true
 tags = ["lean4-proof", "number-theory"]
 latex = "\\forall\\, n \\in \\mathbb{N},\\; \\exists\\, p > n \\;\\text{such that}\\; p \\;\\text{is prime}"
 prerequisites = []

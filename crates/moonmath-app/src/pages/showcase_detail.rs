@@ -72,8 +72,8 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                                 <header class="showcase-header">
                                     <h1>{data.title}</h1>
                                     <div class="showcase-detail-meta">
-                                        {data.difficulty.map(|d| view! {
-                                            <span class="difficulty-badge">{d}</span>
+                                        {data.premier.then(|| view! {
+                                            <span class="premier-badge">"Premier"</span>
                                         })}
                                         <div class="tags">
                                             {data.tags.into_iter().map(|tag| view! {

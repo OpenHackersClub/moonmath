@@ -3,7 +3,6 @@ title = "Chain Rule"
 date = "2026-01-15"
 tags = ["calculus", "derivatives"]
 category = "calculus"
-difficulty = "intermediate"
 interactive = "formula_viz::chain_rule"
 latex = "\\frac{d}{dx}[f(g(x))] = f'(g(x)) \\cdot g'(x)"
 +++

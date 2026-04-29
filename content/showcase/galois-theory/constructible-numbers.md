@@ -2,7 +2,6 @@
 title = "Constructible Numbers"
 description = "Which regular n-gons can be constructed with compass and straightedge?"
 weight = 30
-difficulty = "intermediate"
 tags = ["galois-theory", "geometry"]
 latex = "\\text{Regular } n\\text{-gon constructible} \\iff n = 2^a \\cdot p_1 \\cdot p_2 \\cdots p_k"
 prerequisites = []

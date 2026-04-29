@@ -2,7 +2,6 @@
 title = "Impossibility of the Quintic Formula"
 description = "No general algebraic formula exists for polynomials of degree 5 or higher"
 weight = 10
-difficulty = "advanced"
 tags = ["galois-theory", "visualization"]
 latex = "S_5 \\text{ is not solvable} \\implies \\text{no radical formula for degree } \\geq 5"
 prerequisites = []

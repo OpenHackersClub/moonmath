@@ -115,13 +115,15 @@ pub fn load_category_pages(content_dir: &Path, category: &str) -> Vec<ShowcasePa
             category: category.to_string(),
             title: fm.title,
             description: fm.description.unwrap_or_default(),
-            difficulty: fm.difficulty,
+            premier: fm.premier,
             tags: fm.tags,
             weight: fm.weight.unwrap_or(0),
         });
     }
 
-    pages.sort_by_key(|p| p.weight);
+    // Premier pages first (PRD: "category pages surface premier pages first
+    // in the card grid"), then by author-set weight within each group.
+    pages.sort_by(|a, b| b.premier.cmp(&a.premier).then_with(|| a.weight.cmp(&b.weight)));
     pages
 }
 

@@ -2,7 +2,7 @@
 title = "Mandelbrot Set"
 description = "Interactive visualization of z_{n+1} = z_n^2 + c and its connectedness"
 weight = 10
-difficulty = "introductory"
+premier = true
 tags = ["interactive", "visualization", "fractal"]
 latex = "z_{n+1} = z_n^2 + c"
 prerequisites = []

@@ -10,8 +10,11 @@ pub struct Frontmatter {
     pub tags: Vec<String>,
     #[serde(default)]
     pub category: Option<String>,
+    /// Marks pages that assume limited prerequisite knowledge of the topic — i.e.
+    /// the recommended starting point for that topic. Surfaces a "Premier" badge
+    /// and is sorted first in card grids. See specs/prd.md → Premier Tag.
     #[serde(default)]
-    pub difficulty: Option<String>,
+    pub premier: bool,
     /// Links to an egui visualization, e.g. "formula_viz::chain_rule"
     #[serde(default)]
     pub interactive: Option<String>,
@@ -113,7 +116,8 @@ pub struct ShowcasePageSummary {
     pub category: String,
     pub title: String,
     pub description: String,
-    pub difficulty: Option<String>,
+    #[serde(default)]
+    pub premier: bool,
     pub tags: Vec<String>,
     pub weight: i32,
 }
@@ -136,7 +140,8 @@ pub struct ShowcaseDetailResponse {
     /// Pre-rendered KaTeX HTML for the primary formula (avoids hydration mismatch)
     pub latex_html: Option<String>,
     pub html: String,
-    pub difficulty: Option<String>,
+    #[serde(default)]
+    pub premier: bool,
     pub tags: Vec<String>,
     pub prev: Option<(String, String)>,
     pub next: Option<(String, String)>,

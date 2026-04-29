@@ -58,8 +58,8 @@ pub fn ShowcaseCategoryPage() -> impl IntoView {
                                                 <h3 class="showcase-card-title">{page.title}</h3>
                                                 <p class="showcase-card-desc">{page.description}</p>
                                                 <div class="showcase-card-meta">
-                                                    {page.difficulty.map(|d| view! {
-                                                        <span class="difficulty-badge">{d}</span>
+                                                    {page.premier.then(|| view! {
+                                                        <span class="premier-badge">"Premier"</span>
                                                     })}
                                                     <div class="tags">
                                                         {page.tags.into_iter().map(|tag| view! {
