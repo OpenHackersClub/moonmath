@@ -72,6 +72,22 @@ done < <(jq -r '.[].slug' "$categories_json")
 log "checking ${#routes[@]} routes"
 
 # ─── Per-route status check ─────────────────────────────────────────────────
+# Workers Static Assets propagation isn't atomic — a fresh deploy can have `/`
+# serving 200 while child routes still 404 on some edge POPs for ~10–30s.
+# Retry 404s a handful of times before declaring failure, since it's cheap and
+# almost always a propagation race rather than a real bug.
+
+retry_get() {
+  local url="$1" body_path="$2" code
+  for attempt in 1 2 3 4 5; do
+    code=$(curl -sSL -o "$body_path" -w "%{http_code}" --max-time 15 "$url" || echo "000")
+    case "$code" in
+      404|000|5*) sleep "$attempt"; continue ;;  # likely propagation/transient — backoff
+      *) printf '%s' "$code"; return 0 ;;
+    esac
+  done
+  printf '%s' "$code"
+}
 
 failed=0
 tmp_body="$(mktemp)"
@@ -80,9 +96,9 @@ trap 'rm -f "$tmp_body"' EXIT
 for route in "${routes[@]}"; do
   # -L follows redirects; the Worker uses html_handling = "auto-trailing-slash"
   # which 307s `/foo` → `/foo/`, so we need to chase the final response.
-  http_code=$(curl -sSL -o "$tmp_body" -w "%{http_code}" --max-time 15 "${BASE_URL}${route}" || echo "000")
+  http_code=$(retry_get "${BASE_URL}${route}" "$tmp_body")
   if [[ "$http_code" != "200" ]]; then
-    log "  FAIL $route → HTTP $http_code"
+    log "  FAIL $route → HTTP $http_code (after retries)"
     failed=$((failed + 1))
     continue
   fi
@@ -109,16 +125,15 @@ first_page_slug=$(jq -r '.[0].slug' "$SSG_DATA_DIR/showcase/${first_cat}/pages.j
 if [[ -n "$first_page_slug" ]]; then
   spot_url="${BASE_URL}/showcase/${first_cat}/${first_page_slug}"
   log "spot-checking KaTeX on $spot_url"
-  if curl -sfL --max-time 15 "$spot_url" -o "$tmp_body"; then
-    if ! grep -q 'class="katex' "$tmp_body"; then
-      log "  FAIL katex spot-check → no .katex span found"
-      failed=$((failed + 1))
-    else
-      log "  ok   katex spot-check"
-    fi
-  else
-    log "  FAIL katex spot-check → fetch failed"
+  spot_code=$(retry_get "$spot_url" "$tmp_body")
+  if [[ "$spot_code" != "200" ]]; then
+    log "  FAIL katex spot-check → HTTP $spot_code (after retries)"
     failed=$((failed + 1))
+  elif ! grep -q 'class="katex' "$tmp_body"; then
+    log "  FAIL katex spot-check → no .katex span found"
+    failed=$((failed + 1))
+  else
+    log "  ok   katex spot-check"
   fi
 fi
 
