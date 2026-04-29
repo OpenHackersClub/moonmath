@@ -47,8 +47,7 @@ cargo leptos build --release
 cd worker && npm install && npm run dev
 
 # 4. Deploy.
-cd worker && npm run deploy            # production
-cd worker && npm run deploy:staging    # staging
+cd worker && npm run deploy            # → moonmath.<account>.workers.dev
 ```
 
 CI: `.github/workflows/deploy.yml` runs steps 1–3 then `wrangler deploy`. PRs get a preview Worker at `moonmath-preview-pr-<n>.workers.dev`.

@@ -59,8 +59,7 @@ cargo leptos build --release
 cd worker && npm run dev
 
 # 4. Deploy.
-cd worker && npm run deploy            # production
-cd worker && npm run deploy:staging    # staging
+cd worker && npm run deploy            # → moonmath.<account>.workers.dev
 ```
 
 ## CI/CD
@@ -69,9 +68,18 @@ cd worker && npm run deploy:staging    # staging
 
 | Trigger | Action |
 | --- | --- |
-| `push` to default branch | builds + prerenders + deploys `--env production` |
+| `push` to default branch | builds + prerenders + `wrangler deploy` (top-level config) |
 | `pull_request` | preview deploy at `moonmath-preview-pr-<n>.workers.dev` and a sticky comment with the URL |
-| `workflow_dispatch` | choose `staging` or `production` |
+| `workflow_dispatch` | same as a push — runs the production deploy on demand |
+
+> **Why no `--env staging` / `--env production`?** Wrangler does **not** inherit
+> top-level bindings (durable objects, migrations, containers, KV) into named
+> `[env.*]` blocks — every binding has to be duplicated under each env or the
+> deployed Worker silently runs without it (see the v0.2.5 incident where
+> `LEAN_COMPILER` was unbound on production). Until a real staging zone exists,
+> we deploy the top-level config directly. To re-introduce a split, copy each
+> `[[durable_objects.bindings]]`, `[[migrations]]`, and `[[containers]]` block
+> under `[env.<name>]` in `wrangler.toml`.
 
 The workflow caches Cargo builds via `Swatinem/rust-cache` and uses `cloudflare/wrangler-action@v3`.
 
@@ -92,7 +100,7 @@ Set in `worker/src/index.ts` per the PRD:
 ## Rollback
 
 ```sh
-cd worker && npx wrangler rollback --env production
+cd worker && npx wrangler rollback
 ```
 
 `wrangler rollback` reverts the latest deployment; `wrangler deployments list` shows what's live.

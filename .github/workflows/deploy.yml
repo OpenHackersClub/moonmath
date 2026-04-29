@@ -3,8 +3,8 @@ name: Deploy (Cloudflare Worker)
 # Implements specs/prd.md → "Deployment (Cloudflare Workers)".
 #
 # Triggers:
-#   - push to default branch  → deploys --env production
-#   - manual workflow_dispatch → choose environment
+#   - push to default branch  → deploys the top-level `moonmath` Worker
+#   - manual workflow_dispatch → same (top-level config; no env split)
 #   - pull_request           → preview deploy at moonmath-preview-pr-<n>
 #
 # Required repo secrets:
@@ -22,15 +22,6 @@ on:
       - main
   pull_request:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Deployment environment"
-        required: true
-        default: staging
-        type: choice
-        options:
-          - staging
-          - production
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -104,12 +95,8 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "kind=preview" >> "$GITHUB_OUTPUT"
             echo "name=moonmath-preview-pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "kind=env" >> "$GITHUB_OUTPUT"
-            echo "env=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
           else
-            echo "kind=env" >> "$GITHUB_OUTPUT"
-            echo "env=production" >> "$GITHUB_OUTPUT"
+            echo "kind=production" >> "$GITHUB_OUTPUT"
           fi
           if [ "$HAS_CF_TOKEN" = "true" ] && [ "$HAS_CF_ACCOUNT" = "true" ]; then
             echo "creds=true" >> "$GITHUB_OUTPUT"
@@ -127,14 +114,14 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --name ${{ steps.target.outputs.name }}
 
-      - name: Deploy ${{ steps.target.outputs.env }} Worker
+      - name: Deploy production Worker
         id: deploy_env
-        if: steps.target.outputs.kind == 'env' && steps.target.outputs.creds == 'true'
+        if: steps.target.outputs.kind == 'production' && steps.target.outputs.creds == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --env ${{ steps.target.outputs.env }}
+          command: deploy
 
       # ─── Acceptance ──────────────────────────────────────────────────────
       # HTTP-level smoke gate against the just-deployed URL. Walks every
