@@ -55,36 +55,48 @@ LEAN_REQUEST_MAX_BYTES = "32768"
 # id = "TODO-replace-with-output-of-wrangler-kv-namespace-create"
 # preview_id = "TODO-replace-with-output-of-wrangler-kv-namespace-create-preview"
 
-# ─── Lean compile container ──────────────────────────────────────────────────
+# ─── Lean compile container — TEMPORARILY DISABLED ──────────────────────────
 #
 # The Worker dispatches POST /api/CompileLean to this container, which runs
 # `lean` via the tiny HTTP wrapper in services/lean/server.ts. See
 # docs/lean-service.md for the full architecture and cost model.
 #
-# The container image is built from services/lean/Dockerfile by `wrangler
-# deploy` (no separate registry push needed for the Cloudflare-managed
-# registry). On first deploy Cloudflare provisions the Durable Object class
-# and uploads the image; subsequent deploys are diff-only.
+# DISABLED until the CLOUDFLARE_API_TOKEN GitHub secret is regenerated with
+# Containers permissions and the Cloudflare account has Containers enabled
+# (Workers paid plan). With the previous wrangler 3.90.0, `[[containers]]`
+# was silently dropped so the missing scope never surfaced; wrangler 4.x
+# now actually pushes the image and 401s with a bare "Unauthorized".
+#
+# When the token is updated:
+#   1. Uncomment the three blocks below.
+#   2. Run `./scripts/preflight.sh` locally with Docker up to verify the
+#      build + dry-run still pass.
+#   3. Push and watch CI; the first deploy will provision the DO class +
+#      upload the image, subsequent deploys are diff-only.
+#
+# Until then `POST /api/CompileLean` returns the existing
+# `ServerError|Lean compile container is not bound on this deployment.`,
+# which is no worse than the pre-PR-#4 baseline.
 
-[[durable_objects.bindings]]
-name = "LEAN_COMPILER"
-class_name = "LeanCompiler"
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["LeanCompiler"]
-
-[[containers]]
-class_name = "LeanCompiler"
-image = "./services/lean/Dockerfile"
-# `standard-1` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
-# Drop to `basic` once the v0 image is profiled; raise to a larger tier when
-# Mathlib lands (v0.2.6) and compile memory headroom matters. Wrangler 4.x
-# renamed the legacy "standard" tier to "standard-1".
-instance_type = "standard-1"
-# Cap concurrent instances so a traffic spike can't blow the bill. With
-# sleepAfter=10m most demos serve from a single warm instance.
-max_instances = 5
+# [[durable_objects.bindings]]
+# name = "LEAN_COMPILER"
+# class_name = "LeanCompiler"
+#
+# [[migrations]]
+# tag = "v1"
+# new_sqlite_classes = ["LeanCompiler"]
+#
+# [[containers]]
+# class_name = "LeanCompiler"
+# image = "./services/lean/Dockerfile"
+# # `standard-1` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
+# # Drop to `basic` once the v0 image is profiled; raise to a larger tier when
+# # Mathlib lands (v0.2.6) and compile memory headroom matters. Wrangler 4.x
+# # renamed the legacy "standard" tier to "standard-1".
+# instance_type = "standard-1"
+# # Cap concurrent instances so a traffic spike can't blow the bill. With
+# # sleepAfter=10m most demos serve from a single warm instance.
+# max_instances = 5
 
 # Local dev: `wrangler dev` serves the same Worker against ./dist on :8787.
 [dev]
