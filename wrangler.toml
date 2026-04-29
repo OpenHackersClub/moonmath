@@ -13,7 +13,7 @@
 #      to forward to a managed Lean service. Without it the route returns 503.
 #   4) `cargo run -p moonmath-ssg && cargo leptos build --release && \
 #       scripts/prerender.sh` to populate ./dist.
-#   5) `wrangler deploy` (or `wrangler deploy --env staging`).
+#   5) `wrangler deploy` to push to the `moonmath` Worker on workers.dev.
 #
 
 name = "moonmath"
@@ -32,9 +32,8 @@ binding = "ASSETS"
 not_found_handling = "404-page"
 html_handling = "auto-trailing-slash"
 
-# Default vars — override per-env below.
 [vars]
-LEAN_FALLBACK_ENABLED = "false"
+LEAN_FALLBACK_ENABLED = "true"
 LEAN_REQUEST_MAX_BYTES = "32768"
 
 # Per-IP rate limiter for /api/lean/compile. Replace `id`/`preview_id` with the
@@ -56,35 +55,48 @@ LEAN_REQUEST_MAX_BYTES = "32768"
 # id = "TODO-replace-with-output-of-wrangler-kv-namespace-create"
 # preview_id = "TODO-replace-with-output-of-wrangler-kv-namespace-create-preview"
 
-# ─── Lean compile container ──────────────────────────────────────────────────
+# ─── Lean compile container — TEMPORARILY DISABLED ──────────────────────────
 #
 # The Worker dispatches POST /api/CompileLean to this container, which runs
 # `lean` via the tiny HTTP wrapper in services/lean/server.ts. See
 # docs/lean-service.md for the full architecture and cost model.
 #
-# The container image is built from services/lean/Dockerfile by `wrangler
-# deploy` (no separate registry push needed for the Cloudflare-managed
-# registry). On first deploy Cloudflare provisions the Durable Object class
-# and uploads the image; subsequent deploys are diff-only.
+# DISABLED until the CLOUDFLARE_API_TOKEN GitHub secret is regenerated with
+# Containers permissions and the Cloudflare account has Containers enabled
+# (Workers paid plan). With the previous wrangler 3.90.0, `[[containers]]`
+# was silently dropped so the missing scope never surfaced; wrangler 4.x
+# now actually pushes the image and 401s with a bare "Unauthorized".
+#
+# When the token is updated:
+#   1. Uncomment the three blocks below.
+#   2. Run `./scripts/preflight.sh` locally with Docker up to verify the
+#      build + dry-run still pass.
+#   3. Push and watch CI; the first deploy will provision the DO class +
+#      upload the image, subsequent deploys are diff-only.
+#
+# Until then `POST /api/CompileLean` returns the existing
+# `ServerError|Lean compile container is not bound on this deployment.`,
+# which is no worse than the pre-PR-#4 baseline.
 
-[[durable_objects.bindings]]
-name = "LEAN_COMPILER"
-class_name = "LeanCompiler"
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["LeanCompiler"]
-
-[[containers]]
-class_name = "LeanCompiler"
-image = "./services/lean/Dockerfile"
-# `standard` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
-# Drop to `basic` once the v0 image is profiled; raise to `enhanced` when
-# Mathlib lands (v0.2.6) and compile memory headroom matters.
-instance_type = "standard"
-# Cap concurrent instances so a traffic spike can't blow the bill. With
-# sleepAfter=10m most demos serve from a single warm instance.
-max_instances = 5
+# [[durable_objects.bindings]]
+# name = "LEAN_COMPILER"
+# class_name = "LeanCompiler"
+#
+# [[migrations]]
+# tag = "v1"
+# new_sqlite_classes = ["LeanCompiler"]
+#
+# [[containers]]
+# class_name = "LeanCompiler"
+# image = "./services/lean/Dockerfile"
+# # `standard-1` ≈ 4 GB memory, 0.5 vCPU — plenty for a single Lean process.
+# # Drop to `basic` once the v0 image is profiled; raise to a larger tier when
+# # Mathlib lands (v0.2.6) and compile memory headroom matters. Wrangler 4.x
+# # renamed the legacy "standard" tier to "standard-1".
+# instance_type = "standard-1"
+# # Cap concurrent instances so a traffic spike can't blow the bill. With
+# # sleepAfter=10m most demos serve from a single warm instance.
+# max_instances = 5
 
 # Local dev: `wrangler dev` serves the same Worker against ./dist on :8787.
 [dev]
@@ -96,29 +108,21 @@ local_protocol = "http"
 [observability]
 enabled = true
 
-# ─── Environments ────────────────────────────────────────────────────────────
+# ─── Deploy targets ──────────────────────────────────────────────────────────
 #
-# `wrangler deploy --env production` for prod, `wrangler deploy --env staging`
-# for staging. The `routes` blocks are commented until the real domain is set
-# up — until then deploys land on the workers.dev subdomain.
+# Default `wrangler deploy` pushes to the top-level `name = "moonmath"` Worker
+# on workers.dev. Per-PR previews come from CI passing
+#   `wrangler deploy --name moonmath-preview-pr-<n>`
+# from .github/workflows/deploy.yml — `--name` clones the full top-level config
+# (including the LEAN_COMPILER container binding) into a fresh Worker.
+#
+# Named environments (`[env.staging]`, `[env.production]`) were removed because
+# wrangler does NOT inherit top-level bindings into named envs — duplicating
+# every binding under each env is the price of split envs, and we don't yet
+# need that split. Re-introduce per-env blocks once a real staging zone exists,
+# remembering to repeat the `[[durable_objects.bindings]]`, `[[migrations]]`,
+# and `[[containers]]` blocks under each env.
 
-[env.production]
-name = "moonmath"
 # routes = [
 #   { pattern = "moonmath.dev/*", zone_name = "moonmath.dev" },
 # ]
-[env.production.vars]
-LEAN_FALLBACK_ENABLED = "true"
-
-[env.staging]
-name = "moonmath-staging"
-# routes = [
-#   { pattern = "staging.moonmath.dev/*", zone_name = "moonmath.dev" },
-# ]
-[env.staging.vars]
-LEAN_FALLBACK_ENABLED = "true"
-
-# Per-PR previews are created in CI by passing
-#   `wrangler deploy --name moonmath-preview-pr-<n>`
-# from .github/workflows/deploy.yml. No env block needed — the deploy
-# inherits the top-level config and writes to a fresh Worker name.
