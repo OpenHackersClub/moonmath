@@ -149,6 +149,11 @@ Full PRD at `specs/prd.md`.
    curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/
    curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/showcase/number-theory/prime-theorem
    ```
+5. **Cloudflare deploy preflight** (for changes touching `wrangler.toml`, `worker/`, `services/lean/`, or `.github/workflows/deploy.yml`):
+   ```sh
+   ./scripts/preflight.sh    # worker typecheck + wrangler dry-run + docker build
+   ```
+   Catches the class of bugs CI would otherwise discover after a 10+ minute Rust build (env-split inheritance, `[[containers]]` schema, missing apt deps in the Lean container, etc.). Wrangler 4.x's dry-run requires the Docker daemon to be running; the script auto-skips wrangler/docker checks when Docker is down (with a warning) and still runs the typecheck.
 
 ### Test-driven approach
 
