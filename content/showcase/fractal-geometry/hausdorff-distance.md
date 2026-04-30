@@ -30,7 +30,7 @@ Intuitively, $d_H(A, B) \leq \varepsilon$ means every point of $A$ has a partner
 
 **Nested squares.** A square $S \subset [0,1]^2$ of side $1/2$ centred in the unit square has $d_H(S, [0,1]^2) = \tfrac{\sqrt{2}}{4}$ — the distance from the centre of $S$ to a corner of $[0,1]^2$ minus the distance to a corner of $S$.
 
-**Cantor approximations.** Let $C_n$ be the $n$-th iterate of the middle-thirds Cantor construction (so $C_0 = [0,1]$, $C_1 = [0, 1/3] \cup [2/3, 1]$, …). Then $d_H(C_n, C) \to 0$ as $n \to \infty$, where $C$ is the Cantor set itself. This is the Hausdorff-metric statement that the IFS iteration converges.
+**Cantor approximations.** Let $C_n$ be the $n$-th iterate of the middle-thirds Cantor construction (so $C_0 = [0,1]$, $C_1 = [0, 1/3] \cup [2/3, 1]$, …). Then $d_H(C_n, C) \to 0$ as $n \to \infty$, where $C$ is the Cantor set itself. This is the Hausdorff-metric statement that the [[Iterated Function Systems|IFS]] iteration converges.
 
 ## The Space of Compact Sets
 

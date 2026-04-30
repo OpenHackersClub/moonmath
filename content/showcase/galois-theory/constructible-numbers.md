@@ -20,7 +20,7 @@ The known Fermat primes are $3, 5, 17, 257, 65537$.
 
 ## Connection to Galois Theory
 
-Constructibility of $\cos(2\pi/n)$ is equivalent to the degree $[\mathbb{Q}(\cos(2\pi/n)) : \mathbb{Q}]$ being a power of 2. Via Galois theory, this reduces to the Galois group $\text{Gal}(\mathbb{Q}(\zeta_n)/\mathbb{Q}) \cong (\mathbb{Z}/n\mathbb{Z})^*$ having a composition series with all factors of order 2.
+Constructibility of $\cos(2\pi/n)$ is equivalent to the degree $[\mathbb{Q}(\cos(2\pi/n)) : \mathbb{Q}]$ being a power of 2. Via the [[Fundamental Theorem of Galois Theory|Galois correspondence]], this reduces to the Galois group $\text{Gal}(\mathbb{Q}(\zeta_n)/\mathbb{Q}) \cong (\mathbb{Z}/n\mathbb{Z})^*$ having a composition series with all factors of order 2.
 
 ## Classical Problems Resolved
 

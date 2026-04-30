@@ -10,7 +10,7 @@ lean4_status = "complete"
 
 ## Statement
 
-Every integer $n > 1$ can be written as a product of prime numbers:
+Every integer $n > 1$ can be written as a product of [[Infinitude of Primes|prime numbers]]:
 
 $$n = p_1^{a_1} \cdot p_2^{a_2} \cdots p_k^{a_k}$$
 
