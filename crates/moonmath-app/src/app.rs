@@ -3,6 +3,7 @@ use leptos_meta::*;
 use leptos_router::components::{FlatRoutes, Route, Router, A};
 use leptos_router::{StaticSegment, ParamSegment};
 
+use crate::pages::concepts::ConceptsIndexPage;
 use crate::pages::home::HomePage;
 use crate::pages::inspirations::InspirationsPage;
 use crate::pages::showcase::PrimeShowcasePage;
@@ -59,6 +60,13 @@ pub fn App() -> impl IntoView {
                         path=StaticSegment("showcase")
                         view=ShowcaseIndexPage
                     />
+                    // Static `/showcase/concepts` must precede the
+                    // `(showcase, :category)` dynamic match so the index page
+                    // wins over a "concepts" category lookup.
+                    <Route
+                        path=(StaticSegment("showcase"), StaticSegment("concepts"))
+                        view=ConceptsIndexPage
+                    />
                     <Route
                         path=(StaticSegment("showcase"), ParamSegment("category"))
                         view=ShowcaseCategoryPage
@@ -105,6 +113,7 @@ fn Nav() -> impl IntoView {
             <div class="nav-links">
                 <A href="/" attr:class="nav-link">"Home"</A>
                 <A href="/showcase" attr:class="nav-link">"Showcase"</A>
+                <A href="/showcase/concepts" attr:class="nav-link">"Concepts"</A>
                 <A href="/inspirations" attr:class="nav-link">"Inspirations"</A>
             </div>
         </nav>
