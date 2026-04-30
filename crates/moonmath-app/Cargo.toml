@@ -11,6 +11,7 @@ moonmath-types = { path = "../moonmath-types" }
 moonmath-content = { path = "../moonmath-content", optional = true, features = ["math-render"] }
 moonmath-math = { path = "../moonmath-math", optional = true }
 moonmath-lean = { path = "../moonmath-lean", optional = true }
+moonmath-egui = { path = "../moonmath-egui", optional = true }
 gray_matter = { workspace = true, optional = true }
 
 leptos = { workspace = true }
@@ -28,6 +29,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true, optional = true }
+eframe = { workspace = true, features = ["glow", "default_fonts"], optional = true }
 console_error_panic_hook = { workspace = true }
 web-sys = { workspace = true, optional = true }
 
@@ -42,6 +45,9 @@ hydrate = [
     "leptos/hydrate",
     "dep:gloo-net",
     "dep:web-sys",
+    "dep:moonmath-egui",
+    "dep:eframe",
+    "dep:wasm-bindgen-futures",
 ]
 ssr = [
     "dep:axum",

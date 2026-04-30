@@ -6,6 +6,7 @@ use leptos_router::hooks::use_params_map;
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
 use crate::components::compile_panel::CompilePanel;
 use crate::components::fractal_canvas::FractalVisualizations;
+use crate::components::ifs_canvas::Ifs3dCanvas;
 use crate::fetch::json_resource;
 
 #[server(CompileLean, "/api")]
@@ -59,6 +60,7 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                         let has_fractal_viz =
                             data.tags.iter().any(|t| t == "fractal")
                             && data.tags.iter().any(|t| t == "visualization");
+                        let has_ifs_3d = data.tags.iter().any(|t| t == "ifs-3d");
                         view! {
                             <Title text=format!("{} — MoonMath Showcase", title_for_meta)/>
                             <div class="showcase-detail-page">
@@ -92,6 +94,9 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
 
                                 // Fractal visualizations (for pages tagged fractal + visualization)
                                 {has_fractal_viz.then(|| view! { <FractalVisualizations/> })}
+
+                                // 3D IFS scene (egui+eframe), gated on the `ifs-3d` tag
+                                {has_ifs_3d.then(|| view! { <Ifs3dCanvas/> })}
 
                                 // Lean4 code blocks (interactive with compile button)
                                 {(!lean4_blocks.is_empty()).then(|| {

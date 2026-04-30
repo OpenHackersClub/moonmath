@@ -206,12 +206,15 @@ A category may have any number of premier pages (including zero). The home page 
 
 #### Lean4 Proof Requirement
 
-Every showcase page must contain at least one Lean4 code block that formalizes the page's theorem or a key lemma. The Lean4 snippet should:
+Every showcase page must contain at least one Lean4 code block that formalizes the page's theorem or a key lemma. The Lean4 snippet must:
 - Be self-contained or import only from Mathlib
-- Include the theorem statement and proof (or proof sketch with `sorry` for work-in-progress)
-- Be compilable via the client-side Lean4 WASM compiler
+- Include the theorem statement and a **complete proof — no `sorry`, no `admit`, no `axiom`-based shortcuts**. If the full theorem is out of reach, scope the snippet down to a key lemma that *can* be discharged in full rather than leaving a placeholder.
+- Compile under the project's pinned `lean-toolchain` (Mathlib included), verified by `lake build` in `lean-project/`
+- Be compilable via the client-side Lean4 WASM compiler at the same toolchain
 - Include doc-comments explaining the proof strategy
 - Be rendered with syntax highlighting using the Lean4 highlighter
+
+**Acceptance gate.** CI runs `lake build` over every Lean snippet extracted from showcase pages and fails the build if any snippet contains the strings `sorry`, `admit`, or an unjustified `axiom`. The `lean4_status` frontmatter field consequently only takes the values `complete` (full theorem proven) or `partial` (a scoped lemma is proven in full); the legacy `sorry` and `planned` values are no longer permitted on merged content.
 
 ### Backlinks & Concept Tooltips (Wikipedia-style)
 
