@@ -1,51 +1,10 @@
-+++
-title = "Iterated Function Systems"
-description = "Constructing fractals via contractive affine transformations"
-weight = 30
-tags = ["interactive", "visualization", "fractal", "ifs-3d"]
-latex = "A = \\bigcup_{i=1}^{N} f_i(A)"
-prerequisites = ["hausdorff-distance", "hausdorff-dimension"]
-lean4_status = "complete"
-+++
+/-
+Hutchinson's theorem on iterated function systems.
 
-## Definition
-
-An iterated function system (IFS) is a finite collection of contraction mappings $\{f_1, f_2, \ldots, f_N\}$ on a complete metric space. By the Banach fixed-point theorem (applied to the Hausdorff metric on compact sets), there exists a unique non-empty compact set $A$ — the **attractor** — satisfying:
-
-$$A = \bigcup_{i=1}^{N} f_i(A)$$
-
-## Affine IFS
-
-Each map is typically an affine transformation:
-
-$$f_i\begin{pmatrix} x \\ y \end{pmatrix} = \begin{pmatrix} a_i & b_i \\ c_i & d_i \end{pmatrix} \begin{pmatrix} x \\ y \end{pmatrix} + \begin{pmatrix} e_i \\ f_i \end{pmatrix}$$
-
-## Examples
-
-**Sierpinski Triangle:** Three maps, each scaling by $1/2$ toward a different vertex of an equilateral triangle.
-
-**Barnsley Fern:** Four affine maps with different probabilities, producing a remarkably realistic fern pattern. The maps encode the self-similar structure of the frond, rachis, and leaflets.
-
-## Chaos Game
-
-A simple algorithm to render the attractor: start at any point, repeatedly choose a random $f_i$ (with given probabilities), and plot the iterates. The orbit converges to the attractor by the contraction mapping principle.
-
-## Connections
-
-The proof rests on the [[Hausdorff Distance]]: the Hutchinson operator is a contraction on the complete metric space $(\mathcal{K}^*(X), d_H)$ of non-empty compact sets, so Banach's fixed-point theorem gives a unique fixed point — the attractor. The [[Hausdorff Dimension]] of an IFS attractor can then be computed from the contraction ratios. The [[Mandelbrot Set]] is intimately connected to IFS theory through the dynamics of quadratic polynomials.
-
-## Proof Sketch (Hutchinson, 1981)
-
-1. **Hausdorff completeness.** $(\mathcal{K}^*(X), d_H)$ is a complete metric space (Hausdorff completeness theorem).
-2. **Hutchinson operator.** Define $F : \mathcal{K}^*(X) \to \mathcal{K}^*(X)$ by $F(K) = \bigcup_{i=1}^N f_i(K)$. Each $f_i(K)$ is compact (continuous image of compact) and the finite union of compacts is compact.
-3. **$F$ is a contraction.** Let $s = \max_i s_i < 1$ where $s_i$ is the contraction ratio of $f_i$. A short calculation using $d_H(A \cup B, C \cup D) \leq \max(d_H(A, C), d_H(B, D))$ and $d_H(f_i(K), f_i(L)) \leq s_i \cdot d_H(K, L)$ gives $d_H(F(K), F(L)) \leq s \cdot d_H(K, L)$.
-4. **Banach fixed point.** A contraction on a non-empty complete metric space has a unique fixed point $A \in \mathcal{K}^*(X)$, and $F^n(K_0) \to A$ for any starting $K_0$.
-
-## Lean4 Proof
-
-The proof below is fully formalised against Mathlib v4.28.0 — no `sorry`, no `admit`. The same source lives at `lean-project/MoonMath/IFS.lean` and is verified by `lake env lean MoonMath/IFS.lean`.
-
-```lean4
+The Hutchinson operator `F(K) = ⋃ᵢ fᵢ(K)` is a contraction on the space of
+non-empty compact subsets equipped with the Hausdorff distance, so Banach's
+fixed-point theorem produces a unique non-empty compact attractor.
+-/
 import Mathlib.Topology.MetricSpace.Closeds
 import Mathlib.Topology.MetricSpace.Contracting
 
@@ -69,7 +28,8 @@ private lemma infEDist_image_le_mul {K : ℝ≥0} {f : X → X} (hf : LipschitzW
     infEDist (f x) (f '' t) ≤ K * infEDist x t := by
   obtain ⟨y₀, hy₀⟩ := ht
   by_cases hK : (K : ℝ≥0∞) = 0
-  · rw [hK, zero_mul, nonpos_iff_eq_zero]
+  · -- `K = 0` ⇒ `f` is constant on the orbit of `t`.
+    rw [hK, zero_mul, nonpos_iff_eq_zero]
     have h_eq : edist (f x) (f y₀) = 0 := by
       have h := hf x y₀
       rw [hK, zero_mul, nonpos_iff_eq_zero] at h
@@ -78,7 +38,8 @@ private lemma infEDist_image_le_mul {K : ℝ≥0} {f : X → X} (hf : LipschitzW
     calc infEDist (f x) (f '' t)
         ≤ edist (f x) (f y₀) := infEDist_le_edist_of_mem (mem_image_of_mem _ hy₀)
       _ = 0 := h_eq
-  · show infEDist (f x) (f '' t) ≤ (K : ℝ≥0∞) * infEDist x t
+  · -- `K ≠ 0`: distribute the multiplication through the iInf.
+    show infEDist (f x) (f '' t) ≤ (K : ℝ≥0∞) * infEDist x t
     rw [show infEDist (f x) (f '' t) = ⨅ b ∈ t, edist (f x) (f b) by
           simp_rw [infEDist, iInf_image]]
     rw [infEDist, ENNReal.mul_iInf_of_ne hK ENNReal.coe_ne_top]
@@ -200,12 +161,18 @@ private lemma compactsEDist_ne_top (K L : NonemptyCompacts X) :
 space has a unique non-empty compact attractor. -/
 theorem attractor_exists_unique [Nonempty X] :
     ∃! A : NonemptyCompacts X, ifs.hutchinson A = A := by
+  -- Seed the iteration with the singleton of an arbitrary point.
   let p : X := Classical.arbitrary X
   let K₀ : NonemptyCompacts X :=
     ⟨⟨{p}, isCompact_singleton⟩, singleton_nonempty p⟩
+  -- The Banach fixed-point theorem on `(NonemptyCompacts X, d_H)` (an EMetricSpace)
+  -- requires `edist K₀ (F K₀) ≠ ∞`, which holds because compact sets in a metric
+  -- space are at finite Hausdorff edistance.
   obtain ⟨A, hAfix, _⟩ :=
     ifs.hutchinson_contracting.exists_fixedPoint K₀ (compactsEDist_ne_top _ _)
   refine ⟨A, hAfix, fun B hBfix => ?_⟩
+  -- Uniqueness: any two fixed points either coincide or are at infinite edist;
+  -- for compact sets in a metric space the latter is impossible.
   rcases ifs.hutchinson_contracting.eq_or_edist_eq_top_of_fixedPoints hBfix hAfix with h | h
   · exact h
   · exact (compactsEDist_ne_top B A h).elim
@@ -232,9 +199,3 @@ end IFS
 end IFS
 
 end MoonMath
-```
-
-Two ingredients carry the proof:
-
-1. **`hausdorffEDist_image_le_mul`** — a Lipschitz map with constant `K` shrinks Hausdorff edistance by `K`. Proved from scratch (Mathlib v4.28.0 has the union bound `hausdorffEDist_iUnion_le` but no Lipschitz-image specialisation, so we discharge the `K = 0` and `K ≠ 0` cases manually).
-2. **`compactsEDist_ne_top`** — non-empty compact subsets of a metric space sit at finite Hausdorff edistance (Mathlib's `hausdorffEDist_ne_top_of_nonempty_of_bounded`). This lets us turn the EMetric Banach theorem (`exists_fixedPoint` + `eq_or_edist_eq_top_of_fixedPoints`) into the genuine uniqueness statement, side-stepping the absence of a `MetricSpace (NonemptyCompacts X)` instance in Mathlib.

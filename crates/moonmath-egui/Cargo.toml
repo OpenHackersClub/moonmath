@@ -6,4 +6,5 @@ edition.workspace = true
 [dependencies]
 egui = { workspace = true }
 egui_plot = { workspace = true }
+eframe = { workspace = true, features = ["glow", "default_fonts"] }
 moonmath-types = { path = "../moonmath-types" }

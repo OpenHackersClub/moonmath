@@ -1450,3 +1450,46 @@ a:hover {
         padding: 1rem;
     }
 }
+
+/* ── IFS 3D (egui+eframe) ──────────────────────────── */
+
+.ifs3d-section {
+    margin: 2.5rem 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.ifs3d-section h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.ifs3d-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+    max-width: 60ch;
+}
+
+.ifs3d-frame {
+    background: #14161c;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.ifs3d-canvas {
+    display: block;
+    width: 100%;
+    height: 540px;
+    background: #14161c;
+    outline: none;
+}
+
+.ifs3d-noscript {
+    color: var(--color-text-muted);
+    padding: 1rem;
+    font-size: 0.95rem;
+}
+

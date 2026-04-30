@@ -1,6 +1,8 @@
-// moonmath-egui: egui visualization apps (v0.2+)
-// Stub for workspace compilation.
+// moonmath-egui: egui visualization apps.
 
 pub mod formula_viz;
 pub mod algo_viz;
 pub mod plotting;
+pub mod ifs_3d;
+
+pub use ifs_3d::IfsApp;
