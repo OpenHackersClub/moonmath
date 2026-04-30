@@ -10,7 +10,7 @@ lean4_status = "complete"
 
 ## Definition
 
-An iterated function system (IFS) is a finite collection of contraction mappings $\{f_1, f_2, \ldots, f_N\}$ on a complete metric space. By the Banach fixed-point theorem (applied to the Hausdorff metric on compact sets), there exists a unique non-empty compact set $A$ — the **attractor** — satisfying:
+An iterated function system (IFS) is a finite collection of contraction mappings $\{f_1, f_2, \ldots, f_N\}$ on a complete metric space. By the Banach fixed-point theorem (applied to the [[Hausdorff Distance|Hausdorff metric]] on compact sets), there exists a unique non-empty compact set $A$ — the **attractor** — satisfying:
 
 $$A = \bigcup_{i=1}^{N} f_i(A)$$
 

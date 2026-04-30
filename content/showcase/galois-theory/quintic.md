@@ -15,7 +15,7 @@ There is no general formula using radicals (addition, subtraction, multiplicatio
 ## The Chain of Ideas
 
 1. **Field extensions:** Given a polynomial $f(x)$ over $\mathbb{Q}$, adjoin its roots to get the splitting field $K$.
-2. **Galois group:** The group $\text{Gal}(K/\mathbb{Q})$ permutes the roots of $f$.
+2. **Galois group:** The group $\text{Gal}(K/\mathbb{Q})$ permutes the roots of $f$. The [[Fundamental Theorem of Galois Theory]] turns subgroups of this group into intermediate fields.
 3. **Solvable groups:** A polynomial is solvable by radicals if and only if its Galois group is a solvable group.
 4. **$S_5$ is not solvable:** The symmetric group $S_5$ contains $A_5$, which is simple and non-abelian.
 5. **Conclusion:** The general quintic has Galois group $S_5$, hence is not solvable by radicals.

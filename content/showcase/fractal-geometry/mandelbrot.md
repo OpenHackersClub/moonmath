@@ -20,8 +20,8 @@ Equivalently, $c \in \mathcal{M}$ if and only if $|z_n| \leq 2$ for all $n$, whe
 ## Key Properties
 
 - **Connectedness:** The Mandelbrot set is connected (Douady and Hubbard, 1982). This deep result means it is a single "piece" despite its intricate boundary.
-- **Self-similarity:** Miniature copies of the entire set appear at every scale along the boundary.
-- **Boundary complexity:** The boundary of $\mathcal{M}$ has Hausdorff dimension 2 (Shishikura, 1998).
+- **Self-similarity:** Miniature copies of the entire set appear at every scale along the boundary — the same self-referential structure formalised by [[Iterated Function Systems]].
+- **Boundary complexity:** The boundary of $\mathcal{M}$ has [[Hausdorff Dimension|Hausdorff dimension]] 2 (Shishikura, 1998).
 
 ## Escape-Time Algorithm
 

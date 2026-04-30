@@ -1,3 +1,4 @@
+pub mod concepts;
 pub mod home;
 pub mod inspirations;
 pub mod showcase;

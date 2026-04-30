@@ -1136,6 +1136,256 @@ a:hover {
     font-size: 0.85rem;
 }
 
+/* ── Concept Links & Tooltips (Wikipedia-style) ──── */
+
+/*
+ * Markup produced by moonmath-content::wikilinks::resolve_wikilinks:
+ *   <span class="concept-link-wrapper">
+ *     <a class="concept-link" href="…">display</a>
+ *     <span class="concept-tooltip">…title, formula, desc, "Read more →"…</span>
+ *   </span>
+ *
+ * Unresolved (target page not found):
+ *   <span class="concept-link-unresolved" title="Page not found: X">display</span>
+ */
+
+.concept-link-wrapper {
+    position: relative;
+    display: inline;
+}
+
+.concept-link {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--color-accent);
+    padding-bottom: 1px;
+    transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.concept-link:hover,
+.concept-link:focus-visible {
+    color: var(--color-accent-light);
+    border-bottom-color: var(--color-accent-light);
+    background: rgba(244, 233, 205, 0.06);
+    outline: none;
+}
+
+.concept-link-unresolved {
+    color: var(--color-text-muted);
+    border-bottom: 1px dashed var(--color-text-muted);
+    cursor: help;
+    opacity: 0.75;
+}
+
+.concept-tooltip {
+    /* Hidden by default; shown when the wrapper is hovered or focus-within. */
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.55rem);
+    z-index: 200;
+    width: max-content;
+    max-width: min(22rem, 90vw);
+    padding: 0.85rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+
+    /* Animation: fade + small lift. */
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+
+    /* Reset the inline default — tooltips are block-flow internally. */
+    font-size: 0.92rem;
+    line-height: 1.5;
+    text-align: left;
+    white-space: normal;
+}
+
+/* Little arrow pointing back at the link. */
+.concept-tooltip::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: 1.1rem;
+    width: 12px;
+    height: 12px;
+    background: var(--color-surface);
+    border-left: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border);
+    transform: rotate(45deg);
+}
+
+.concept-link-wrapper:hover .concept-tooltip,
+.concept-link-wrapper:focus-within .concept-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.concept-tooltip-title {
+    font-weight: 600;
+    color: var(--color-accent-light);
+    font-size: 1rem;
+}
+
+.concept-tooltip-formula {
+    /* KaTeX is heavy; scale down so a display formula fits the popup. */
+    font-size: 0.95rem;
+    overflow-x: auto;
+    padding: 0.25rem 0;
+    color: var(--color-text);
+}
+
+.concept-tooltip-formula .katex-display {
+    margin: 0;
+}
+
+.concept-tooltip-desc {
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+}
+
+.concept-tooltip-more {
+    align-self: flex-start;
+    color: var(--color-accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.1rem;
+}
+
+.concept-tooltip-more:hover {
+    text-decoration: underline;
+}
+
+/* Touch devices: hover is unreliable. Skip the popup; tap follows the link
+ * normally. The native browser long-press preview remains available. */
+@media (hover: none) {
+    .concept-tooltip {
+        display: none;
+    }
+}
+
+/* Reduced motion: snap visibility, no transforms. */
+@media (prefers-reduced-motion: reduce) {
+    .concept-link,
+    .concept-tooltip {
+        transition: none;
+    }
+    .concept-tooltip {
+        transform: none;
+    }
+}
+
+/* ── Concepts Index Page ─────────────────────────── */
+
+.concepts-page {
+    padding: 1rem 0;
+}
+
+.concepts-header {
+    margin-bottom: 2rem;
+}
+
+.concepts-header h1 {
+    font-size: 2.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.concepts-subtitle {
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    max-width: 60ch;
+}
+
+.concepts-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.concept-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1rem 1.1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.concept-row-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.concept-row-title {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.concept-row-title:hover {
+    color: var(--color-accent-light);
+    text-decoration: underline;
+}
+
+.concept-row-category {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.concept-row-count {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.concept-row-desc {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.concept-row-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.concept-row-refs a {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.concept-row-refs a:hover {
+    text-decoration: underline;
+}
+
+.concepts-empty {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
 /* ── Inspirations ────────────────────────────────── */
 
 .ins-page {

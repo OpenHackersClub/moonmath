@@ -20,7 +20,7 @@ $$a^{p-1} \equiv 1 \pmod{p}$$
 
 ## Proof via Necklace Counting
 
-Consider the set of all strings of length $p$ over an alphabet of $a$ symbols. There are $a^p$ such strings total. Exactly $a$ of them are constant (all symbols the same). The remaining $a^p - a$ strings can be grouped into equivalence classes under cyclic rotation, each of size exactly $p$ (since $p$ is prime and the string is non-constant). Therefore $p \mid (a^p - a)$, giving us $a^p \equiv a \pmod{p}$.
+Consider the set of all strings of length $p$ over an alphabet of $a$ symbols. There are $a^p$ such strings total. Exactly $a$ of them are constant (all symbols the same). The remaining $a^p - a$ strings can be grouped into equivalence classes under cyclic rotation, each of size exactly $p$ (since $p$ is [[Infinitude of Primes|prime]] and the string is non-constant). Therefore $p \mid (a^p - a)$, giving us $a^p \equiv a \pmod{p}$.
 
 ## Applications
 
