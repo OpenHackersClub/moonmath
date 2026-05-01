@@ -85,18 +85,19 @@ $\sqrt{ab} \leq (a+b)/2$ from it, and then delegate the weighted general case to
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
-/-- Two-term AM–GM: 2ab ≤ a² + b² (equivalent form). -/
-theorem am_gm_sq (a b : ℝ) : 2 * (a * b) ≤ a ^ 2 + b ^ 2 :=
-  two_mul_le_add_sq a b
+/-- Two-term AM–GM: 2ab ≤ a² + b² (equivalent form).
+    Note: `two_mul_le_add_sq` proves `2 * a * b ≤ ...`; we use `linarith` to
+    convert to `2 * (a * b)`. -/
+theorem am_gm_sq (a b : ℝ) : 2 * (a * b) ≤ a ^ 2 + b ^ 2 := by
+  have h := two_mul_le_add_sq a b
+  linarith
 
 /-- Two-term AM–GM for non-negative reals: √(ab) ≤ (a+b)/2. -/
 theorem am_gm_two (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
     Real.sqrt (a * b) ≤ (a + b) / 2 := by
-  rw [div_le_iff (by norm_num : (0:ℝ) < 2)] at *
   rw [← Real.sqrt_sq (by linarith : 0 ≤ (a + b) / 2)]
   apply Real.sqrt_le_sqrt
-  have h := two_mul_le_add_sq a b
-  nlinarith [sq_nonneg (a - b)]
+  nlinarith [sq_nonneg (a - b), sq_nonneg (a + b)]
 
 /-- Weighted two-term AM–GM: for weights w₁, w₂ ≥ 0 with w₁ + w₂ = 1, and p₁, p₂ ≥ 0,
     we have p₁^w₁ · p₂^w₂ ≤ w₁·p₁ + w₂·p₂. -/

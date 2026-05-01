@@ -87,15 +87,16 @@ theorem bell_recursion (n : ℕ) :
     Nat.bell (n + 1) = ∑ i : Fin n.succ, Nat.choose n i * Nat.bell (n - i) :=
   Nat.bell_succ n
 
-/-- Verify small Bell numbers by computation. -/
+/-- Verify small Bell numbers by computation.
+    Uses `native_decide` since `Nat.bell` does not reduce under `decide`. -/
 theorem bell_vals :
     Nat.bell 0 = 1 ∧ Nat.bell 1 = 1 ∧ Nat.bell 2 = 2 ∧
-    Nat.bell 3 = 5 ∧ Nat.bell 4 = 15 ∧ Nat.bell 5 = 52 := by decide
+    Nat.bell 3 = 5 ∧ Nat.bell 4 = 15 ∧ Nat.bell 5 = 52 := by native_decide
 
 /-- B(0) = 1: the empty set has exactly one partition (the empty partition). -/
 theorem bell_zero : Nat.bell 0 = 1 :=
   Nat.bell_zero
 
 /-- B(5) = 52, verifying the sixth Bell number. -/
-theorem bell_five : Nat.bell 5 = 52 := by decide
+theorem bell_five : Nat.bell 5 = 52 := by native_decide
 ```

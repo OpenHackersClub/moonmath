@@ -68,13 +68,13 @@ The Radon-Nikodym theorem is the measure-theoretic backbone of conditional expec
 ## Lean4 Proof
 
 ```lean4
-import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+import Mathlib
 
-open MeasureTheory
+open MeasureTheory Measure
 
 /-- Radon-Nikodym theorem: if ν ≪ μ (absolutely continuous), then ν has a
     measurable density (Radon-Nikodym derivative) with respect to μ. -/
-theorem radon_nikodym {α : Type*} {m : MeasurableSpace α}
+theorem radon_nikodym {α : Type*} [MeasurableSpace α]
     {μ ν : Measure α} [SigmaFinite μ] [HaveLebesgueDecomposition ν μ]
     (h : ν ≪ μ) :
     ν = μ.withDensity (ν.rnDeriv μ) :=

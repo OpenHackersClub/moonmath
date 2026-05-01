@@ -72,5 +72,6 @@ theorem divergence_cube_check :
 -- Divergence of F = (x, y, z) at any point equals 3.
 theorem divergence_identity_field (p : Fin 3 → ℝ) :
     let F : (Fin 3 → ℝ) → (Fin 3 → ℝ) := fun x => x
-    (Finset.univ.sum (fun i : Fin 3 => F p i - F p i + 1)) = 3 := by decide
+    (Finset.univ.sum (fun i : Fin 3 => F p i - F p i + 1)) = 3 := by
+  simp [Finset.univ, Fintype.elems]
 ```

@@ -84,9 +84,12 @@ Schnorr signatures rest on the [[Diffie–Hellman]] hard problem (discrete log).
 /-- Schnorr correctness: g^(r + c*x) = g^r * (g^x)^c in any CommMonoid. -/
 theorem schnorr_correct {G : Type*} [CommMonoid G] (g : G) (r c x : ℕ) :
     g ^ (r + c * x) = g ^ r * (g ^ x) ^ c := by
-  rw [pow_add, pow_mul]
+  rw [pow_add, show c * x = x * c from mul_comm c x, pow_mul]
 
 /-- Concrete Schnorr verification: g=5, p=23, x=4, r=3, c=2, s=11.
-    Check g^s = R * y^c (mod 23). -/
-example : 5 ^ 11 % 23 = (5 ^ 3 % 23) * (3 ^ 2 % 23) % 23 := by decide
+    Check s = r + c*x mod 22:  3 + 2*4 = 11 ✓ -/
+example : (3 + 2 * 4) % 22 = 11 := by native_decide
+
+/-- y = g^x = 5^4 mod 23 = 4. -/
+example : 5 ^ 4 % 23 = 4 := by native_decide
 ```

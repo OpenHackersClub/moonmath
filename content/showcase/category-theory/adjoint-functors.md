@@ -65,8 +65,10 @@ import Mathlib.CategoryTheory.Adjunction.Basic
 open CategoryTheory
 
 /-- The hom-set bijection for an adjunction L ⊣ R.
-    Mathlib provides this as `Adjunction.homEquiv`. -/
-theorem adjunction_hom_equiv {C D : Type*} [Category C] [Category D]
+    Mathlib provides this as `Adjunction.homEquiv`.
+    Note: `(L.obj X ⟶ Y) ≃ (X ⟶ R.obj Y)` is a Type (Equiv), not a Prop,
+    so we use `def` instead of `theorem`. -/
+def adjunction_hom_equiv {C D : Type*} [Category C] [Category D]
     {L : C ⥤ D} {R : D ⥤ C} (adj : L ⊣ R) (X : C) (Y : D) :
     (L.obj X ⟶ Y) ≃ (X ⟶ R.obj Y) :=
   adj.homEquiv X Y

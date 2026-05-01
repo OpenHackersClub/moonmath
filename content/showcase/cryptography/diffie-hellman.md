@@ -61,12 +61,11 @@ theorem dh_correct {G : Type*} [CommMonoid G] (g : G) (a b : ℕ) :
     (g ^ a) ^ b = (g ^ b) ^ a := by
   rw [← pow_mul, ← pow_mul, Nat.mul_comm]
 
-/-- Concrete verification for g=5, p=23, a=6, b=15. -/
--- Both sides equal 2 mod 23.
-#eval (8 ^ 15) % 23   -- 2  (Bob computes A^b)
-#eval (19 ^ 6) % 23   -- 2  (Alice computes B^a)
-
 /-- Numeric check: 5^(6*15) mod 23 = 5^(15*6) mod 23. -/
 example : 5 ^ (6 * 15) % 23 = 5 ^ (15 * 6) % 23 := by
   rw [Nat.mul_comm]
+
+/-- Verify concrete values: Bob and Alice both compute 2. -/
+example : (8 ^ 15) % 23 = 2 := by native_decide
+example : (19 ^ 6) % 23 = 2 := by native_decide
 ```
