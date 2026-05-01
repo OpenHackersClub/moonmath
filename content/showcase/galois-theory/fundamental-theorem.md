@@ -2,7 +2,7 @@
 title = "Fundamental Theorem of Galois Theory"
 description = "Bijection between intermediate fields and subgroups of the Galois group"
 weight = 20
-tags = ["galois-theory", "visualization"]
+tags = ["lean4-proof", "galois-theory", "visualization"]
 latex = "\\{\\text{intermediate fields}\\} \\longleftrightarrow \\{\\text{subgroups of } \\text{Gal}(K/F)\\}"
 prerequisites = ["quintic"]
 lean4_status = "complete"

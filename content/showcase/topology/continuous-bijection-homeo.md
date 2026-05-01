@@ -65,7 +65,7 @@ Compact  ──continuous──▶  Hausdorff
 - [[Heine–Borel Theorem]] — the theorem that closed bounded sets in $\mathbb{R}^n$ are compact is exactly what makes many bijections $[0,1] \to S^1$-type maps into homeomorphisms when the domain is a closed bounded interval.
 - [[Alexandrov One-Point Compactification]] — the homeomorphism $\text{OnePoint}(\mathbb{R}) \cong S^1$ is an instance: stereographic projection is a continuous bijection from the compact one-point compactification to the Hausdorff circle.
 - [[Tychonoff's Theorem]] — Tychonoff's theorem produces compact product spaces; when a continuous bijection maps such a product to a Hausdorff space, this theorem applies automatically.
-- [[Brouwer Fixed Point Theorem]] — Brouwer's theorem relies on the fact that $D^n$ and $S^{n-1}$ are compact Hausdorff, and continuous maps from them behave rigidly; this theorem underlies the no-retraction lemma used in the proof.
+- [[Brouwer Fixed-Point Theorem]] — Brouwer's theorem relies on the fact that $D^n$ and $S^{n-1}$ are compact Hausdorff, and continuous maps from them behave rigidly; this theorem underlies the no-retraction lemma used in the proof.
 
 ## Lean4 Proof
 

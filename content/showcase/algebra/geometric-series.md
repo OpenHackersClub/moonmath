@@ -66,9 +66,9 @@ For the infinite sum: $S_n = (1 - x^n)/(1-x)$ and $|x^n| \to 0$ as $n \to \infty
 ## Connections
 
 - [[Quadratic Formula]] — setting $n=2$ and solving $x^2 - 1 = (x-1)(x+1) = 0$ echoes the factoring step
-- [[AM-GM Inequality]] — bounding $|1 + x + \cdots + x^{n-1}|$ uses GM applied to the terms
+- [[AM–GM Inequality]] — bounding $|1 + x + \cdots + x^{n-1}|$ uses GM applied to the terms
 - [[Binomial Theorem]] — both rely on algebraic manipulation of sums with a closed form
-- [[Cauchy-Schwarz]] — $\ell^2$ convergence proofs use Cauchy-Schwarz on partial sums
+- [[Cauchy–Schwarz]] — $\ell^2$ convergence proofs use Cauchy–Schwarz on partial sums
 - [[Vieta Formulas]] — the polynomial $x^n - 1 = (x-1)(x^{n-1}+\cdots+1)$ relates roots (roots of unity) to coefficients
 
 ## Lean4 Proof

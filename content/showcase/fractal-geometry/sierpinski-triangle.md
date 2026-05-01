@@ -2,7 +2,7 @@
 title = "Sierpinski Triangle"
 description = "Self-similar fractal built by three half-scale copies of itself"
 weight = 40
-tags = ["lean4-proof", "visualization", "fractal"]
+tags = ["lean4-proof", "visualization", "fractal-geometry"]
 latex = "d_H = \\frac{\\log 3}{\\log 2}"
 prerequisites = ["iterated-function-systems", "hausdorff-dimension"]
 lean4_status = "complete"

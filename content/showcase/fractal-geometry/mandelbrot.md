@@ -3,7 +3,7 @@ title = "Mandelbrot Set"
 description = "Interactive visualization of z_{n+1} = z_n^2 + c and its connectedness"
 weight = 10
 premier = true
-tags = ["interactive", "visualization", "fractal"]
+tags = ["lean4-proof", "interactive", "visualization", "fractal-geometry"]
 latex = "z_{n+1} = z_n^2 + c"
 prerequisites = []
 lean4_status = "sorry"

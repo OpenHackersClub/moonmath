@@ -57,7 +57,7 @@ f'(x) = 2x
 - [[Mean Value Theorem]] — the key lemma applied subinterval-by-subinterval in the proof
 - [[Chain Rule]] — generalises FTC to compositions: $\frac{d}{dx}\int_a^{g(x)} f(t)\,dt = f(g(x)) \cdot g'(x)$
 - [[Taylor's Theorem]] — Taylor's theorem can be derived by applying FTC repeatedly ($n+1$ times)
-- [[L'Hopital's Rule]] — evaluation of many limits uses FTC to identify derivative values
+- [[L’Hôpital's Rule]] — evaluation of many limits uses FTC to identify derivative values
 - [[Intermediate Value Theorem]] — continuity of $f$ (required by Part I) is also the hypothesis of IVT
 
 ## Lean4 Proof

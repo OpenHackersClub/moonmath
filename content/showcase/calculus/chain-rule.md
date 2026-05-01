@@ -2,9 +2,11 @@
 title = "Chain Rule"
 description = "Differentiate composite functions by peeling layers"
 weight = 10
-tags = ["calculus", "derivatives"]
+tags = ["lean4-proof", "calculus", "derivatives", "visualization"]
 premier = true
 latex = "\\frac{d}{dx}[f(g(x))] = f'(g(x)) \\cdot g'(x)"
+prerequisites = []
+lean4_status = "sorry"
 +++
 
 The **chain rule** allows us to differentiate composite functions. If we have a function $h(x) = f(g(x))$, then its derivative is:

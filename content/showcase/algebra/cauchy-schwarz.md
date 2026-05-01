@@ -1,5 +1,5 @@
 +++
-title = "Cauchy-Schwarz Inequality"
+title = "Cauchy–Schwarz Inequality"
 description = "The inner product of two vectors is bounded by the product of their norms"
 weight = 30
 tags = ["lean4-proof", "algebra", "inequality", "linear-algebra", "visualization"]
@@ -65,23 +65,23 @@ Therefore $|\langle u, v\rangle| \leq \|u\|\|v\|$.
 
 ## Connections
 
-Cauchy-Schwarz is a cornerstone of analysis and algebra:
+Cauchy–Schwarz is a cornerstone of analysis and algebra:
 
-- [[AM-GM Inequality]] — a one-dimensional shadow; both follow from convexity / Jensen's inequality
+- [[AM–GM Inequality]] — a one-dimensional shadow; both follow from convexity / Jensen's inequality
 - [[Quadratic Formula]] — the discriminant condition $b^2 \leq 4ac$ in disguise
-- [[Binomial Theorem]] — the "cross term" bound in $\|u+v\|^2$ is Cauchy-Schwarz
-- [[Geometric Series]] — Bessel's inequality for orthonormal expansions uses Cauchy-Schwarz
-- [[Vieta Formulas]] — in the Gram matrix approach to polynomial roots, Cauchy-Schwarz controls error
+- [[Binomial Theorem]] — the "cross term" bound in $\|u+v\|^2$ is Cauchy–Schwarz
+- [[Geometric Series]] — Bessel's inequality for orthonormal expansions uses Cauchy–Schwarz
+- [[Vieta Formulas]] — in the Gram matrix approach to polynomial roots, Cauchy–Schwarz controls error
 
 ## Lean4 Proof
 
 Mathlib provides `norm_inner_le_norm` in `Mathlib.Analysis.InnerProductSpace.Basic`, which is exactly
-the Cauchy-Schwarz inequality for inner product spaces.
+the Cauchy–Schwarz inequality for inner product spaces.
 
 ```lean4
 import Mathlib.Analysis.InnerProductSpace.Basic
 
-/-- Cauchy-Schwarz inequality: the norm of the inner product is bounded by
+/-- Cauchy–Schwarz inequality: the norm of the inner product is bounded by
     the product of the norms. This is `norm_inner_le_norm` in Mathlib.  -/
 theorem cauchy_schwarz
     {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]

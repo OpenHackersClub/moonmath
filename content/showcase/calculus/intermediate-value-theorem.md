@@ -56,7 +56,7 @@ Bisection algorithm exploits IVT: repeatedly halve $[a, b]$ at the sign-change b
 
 - [[Mean Value Theorem]] — Rolle's Theorem (used in MVT's proof) relies on IVT to locate extrema
 - [[Fundamental Theorem of Calculus]] — continuity hypotheses in FTC are validated via IVT arguments
-- [[L'Hopital's Rule]] — the squeeze step in L'Hôpital's proof uses IVT to trap $c_x$ between $a$ and $x$
+- [[L’Hôpital's Rule]] — the squeeze step in L'Hôpital's proof uses IVT to trap $c_x$ between $a$ and $x$
 - [[Taylor's Theorem]] — existence of the Lagrange remainder point $c$ follows from IVT applied to an auxiliary function
 - [[Chain Rule]] — continuity (a prerequisite for the chain rule) is IVT's core hypothesis
 

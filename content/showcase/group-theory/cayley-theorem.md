@@ -57,7 +57,7 @@ Define $\phi : G \to \text{Sym}(G)$ by $\phi(g)(x) = gx$.
 
 ## Connections
 
-Cayley's theorem shows that abstract group theory is no more general than the theory of permutation groups — every result proved for $\text{Sym}(X)$ has a structural reading for general groups. The embedding is used in [[Lagrange's Theorem]] proofs (cosets as orbits), feeds into [[Sylow's Theorems]] (embedding into symmetric groups to count fixed points), and motivates the representation theory route toward the [[Impossibility of the Quintic Formula]] (Galois groups act faithfully on roots, making them concrete permutation groups). The [[Fundamental Theorem of Galois Theory]] is in part a story about which permutation subgroups fix which subfields.
+Cayley's theorem shows that abstract group theory is no more general than the theory of permutation groups — every result proved for $\text{Sym}(X)$ has a structural reading for general groups. The embedding is used in [[Lagrange's Theorem]] proofs (cosets as orbits), feeds into [[Sylow Theorems]] (embedding into symmetric groups to count fixed points), and motivates the representation theory route toward the [[Impossibility of the Quintic Formula]] (Galois groups act faithfully on roots, making them concrete permutation groups). The [[Fundamental Theorem of Galois Theory]] is in part a story about which permutation subgroups fix which subfields.
 
 ## Lean4 Proof
 

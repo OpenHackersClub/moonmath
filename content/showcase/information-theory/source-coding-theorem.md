@@ -60,7 +60,7 @@ root
 
 ## Connections
 
-The lower bound relies on the positivity of KL divergence, a consequence of [[Shannon Entropy]]'s concavity. The Kraft feasibility condition is [[Kraft's Inequality]]. The bound has the same form as the [[AM-GM Inequality]] applied to log terms via Jensen.
+The lower bound relies on the positivity of KL divergence, a consequence of [[Shannon Entropy]]'s concavity. The Kraft feasibility condition is [[Kraft's Inequality]]. The bound has the same form as the [[AM–GM Inequality]] applied to log terms via Jensen.
 
 ## Lean4 Proof
 

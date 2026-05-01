@@ -2,7 +2,7 @@
 title = "Quadratic Reciprocity"
 description = "Relationship between solvability of quadratic congruences for two odd primes"
 weight = 40
-tags = ["number-theory", "modular-arithmetic"]
+tags = ["lean4-proof", "number-theory", "modular-arithmetic", "visualization"]
 latex = "\\left(\\frac{p}{q}\\right)\\left(\\frac{q}{p}\\right) = (-1)^{\\frac{p-1}{2}\\cdot\\frac{q-1}{2}}"
 prerequisites = ["fermats-little-theorem"]
 lean4_status = "complete"

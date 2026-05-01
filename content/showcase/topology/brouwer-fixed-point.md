@@ -2,7 +2,7 @@
 title = "Brouwer Fixed-Point Theorem"
 description = "Every continuous map from a compact convex set to itself has a fixed point"
 weight = 30
-tags = ["lean4-proof", "topology", "fixed-point"]
+tags = ["lean4-proof", "topology", "fixed-point", "visualization"]
 latex = "f : D^n \\to D^n \\text{ continuous} \\implies \\exists\\, x,\\; f(x) = x"
 prerequisites = []
 lean4_status = "complete"
@@ -47,8 +47,8 @@ Intuitively: crumple a piece of paper and lay it on a copy of itself — at leas
 
 - **[[Heine–Borel Theorem]]** — the closed unit ball is compact (closed and bounded); compactness is essential for most existence proofs.
 - **[[Bolzano–Weierstrass Theorem]]** — the 1D proof uses the Intermediate Value Theorem, closely related to the nested interval argument behind Bolzano–Weierstrass.
-- **[[Tychonoff Theorem]]** — in infinite dimensions (e.g. Hilbert space), Tychonoff's theorem helps recover a version via the Schauder fixed-point theorem.
-- **[[Urysohn Lemma]]** — separation of points is used in the homological proof to construct test functions distinguishing boundary from interior.
+- **[[Tychonoff's Theorem]]** — in infinite dimensions (e.g. Hilbert space), Tychonoff's theorem helps recover a version via the Schauder fixed-point theorem.
+- **[[Urysohn's Lemma]]** — separation of points is used in the homological proof to construct test functions distinguishing boundary from interior.
 - **[[Hausdorff Distance]]** — iterated approximation schemes for fixed points converge in the Hausdorff metric on compact sets.
 - **[[Iterated Function Systems]]** — IFS attractors are Banach fixed points in the Hausdorff metric space; Brouwer's theorem gives a topological (not metric) companion existence result.
 

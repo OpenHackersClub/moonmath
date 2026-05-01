@@ -2,7 +2,7 @@
 title = "Hausdorff Distance"
 description = "A metric on non-empty compact sets, foundation for the IFS attractor theorem"
 weight = 25
-tags = ["fractal", "metric"]
+tags = ["lean4-proof", "fractal-geometry", "metric", "visualization"]
 latex = "d_H(A, B) = \\max\\left(\\sup_{a \\in A} d(a, B),\\ \\sup_{b \\in B} d(b, A)\\right)"
 prerequisites = []
 lean4_status = "sorry"

@@ -2,7 +2,7 @@
 title = "Wilson's Theorem"
 description = "A natural number p > 1 is prime if and only if (p-1)! ≡ -1 mod p"
 weight = 80
-tags = ["lean4-proof", "number-theory", "primality", "factorials"]
+tags = ["lean4-proof", "number-theory", "primality", "factorials", "visualization"]
 latex = "(p-1)! \\equiv -1 \\pmod{p}"
 prerequisites = ["fermats-little-theorem"]
 lean4_status = "complete"

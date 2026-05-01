@@ -69,8 +69,8 @@ where $e_k$ is the $k$-th **elementary symmetric polynomial**.
 
 - [[Quadratic Formula]] — Vieta for degree 2; $b^2 - 4ac = (x_1-x_2)^2 a^2$ links discriminant to root differences
 - [[Binomial Theorem]] — $(x-r)^n$ is a degenerate Vieta case where all roots coincide
-- [[AM-GM Inequality]] — AM-GM on the roots $x_i$ gives inequalities between the $e_k$
-- [[Cauchy-Schwarz]] — in the Gram matrix of roots, Cauchy-Schwarz bounds cross-terms of the $e_k$
+- [[AM–GM Inequality]] — AM–GM on the roots $x_i$ gives inequalities between the $e_k$
+- [[Cauchy–Schwarz]] — in the Gram matrix of roots, Cauchy–Schwarz bounds cross-terms of the $e_k$
 - [[Geometric Series]] — roots of $x^n - 1 = 0$ (roots of unity) satisfy $e_1 = 0$, $e_n = (-1)^{n+1}$
 
 ## Lean4 Proof

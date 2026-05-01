@@ -62,7 +62,7 @@ We need $\frac{f'(c)}{g'(c)} = \frac{\cos c}{-\sin c} = -\cot c = -1$, so $\cot 
 
 - [[Cauchy's Mean Value Theorem]] — the generalized MVT is the ratio form of Cauchy's MVT; both use the same Mathlib lemma
 - [[Mean Value Theorem]] — the standard MVT is the special case $g(x) = x$ of the generalized form
-- [[L'Hôpital's Rule]] — L'Hopital's rule for $0/0$ and $\infty/\infty$ limits is derived from the generalized MVT
+- [[L'Hôpital's Rule]] — L’Hôpital's rule for $0/0$ and $\infty/\infty$ limits is derived from the generalized MVT
 
 ## Lean4 Proof
 

@@ -35,7 +35,7 @@ $$\|a\|_2 \cdot \|b\|_2 \approx 32.83 \geq 32 = \sum a_i b_i \quad \checkmark$$
 Now with $p = 3$, $q = 3/2$, $a = (1, 1, 1)$, $b = (1, 2, 3)$:
 
 $$\|a\|_3 = 1, \quad \|b\|_{3/2} = (1 + 2^{3/2} + 3^{3/2})^{2/3} \approx (1 + 2.83 + 5.20)^{2/3} \approx 4.25$$
-$$\sum a_i b_i = 6 \leq 1 \cdot 4.25 \quad \text{(fails — showing p=q=2 is Cauchy-Schwarz which is tight)}$$
+$$\sum a_i b_i = 6 \leq 1 \cdot 4.25 \quad \text{(fails — showing p=q=2 is Cauchy–Schwarz which is tight)}$$
 
 The $p=q=2$ case with unit vectors achieves equality when $a \parallel b$.
 

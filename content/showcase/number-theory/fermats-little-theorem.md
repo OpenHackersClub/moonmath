@@ -2,7 +2,7 @@
 title = "Fermat's Little Theorem"
 description = "For prime p, a^p is congruent to a mod p"
 weight = 30
-tags = ["lean4-proof", "number-theory", "modular-arithmetic"]
+tags = ["lean4-proof", "number-theory", "modular-arithmetic", "visualization"]
 latex = "a^p \\equiv a \\pmod{p}"
 prerequisites = ["fundamental-theorem-arithmetic"]
 lean4_status = "complete"

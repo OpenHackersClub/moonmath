@@ -55,7 +55,7 @@ Each iterate is the partial Taylor sum of $e^t$; the Picard contraction forces c
 
 ## Connections
 
-The Lipschitz condition is the same regularity assumed in the [[Mean Value Theorem]] proof; the Banach fixed-point step is the analytic analogue of the contracting-map argument behind [[Brouwer Fixed Point Theorem]].
+The Lipschitz condition is the same regularity assumed in the [[Mean Value Theorem]] proof; the Banach fixed-point step is the analytic analogue of the contracting-map argument behind [[Brouwer Fixed-Point Theorem]].
 
 ## Lean4 Proof
 

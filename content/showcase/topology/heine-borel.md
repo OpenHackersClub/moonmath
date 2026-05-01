@@ -2,7 +2,7 @@
 title = "Heine–Borel Theorem"
 description = "In ℝⁿ, a subset is compact if and only if it is closed and bounded"
 weight = 10
-tags = ["lean4-proof", "topology", "compactness"]
+tags = ["lean4-proof", "topology", "compactness", "visualization"]
 latex = "K \\subseteq \\mathbb{R}^n \\;\\text{compact} \\iff K \\;\\text{closed and bounded}"
 prerequisites = []
 lean4_status = "complete"
@@ -42,7 +42,7 @@ For an open set $(1,3)$: the cover $\{(1+\tfrac{1}{n}, 3) : n \ge 1\}$ is an ope
 
 **Compact $\Rightarrow$ closed and bounded.** A compact subset of a Hausdorff space is closed. If $K$ were unbounded, the open cover $\{B_n(0) : n \in \mathbb{N}\}$ would have no finite subcover — contradiction.
 
-**Closed and bounded $\Rightarrow$ compact.** A closed bounded set sits inside some $[-R,R]^n$. The box $[-R,R]^n$ is a finite product of compact intervals, hence compact by [[Tychonoff Theorem]]. A closed subset of a compact set is compact.
+**Closed and bounded $\Rightarrow$ compact.** A closed bounded set sits inside some $[-R,R]^n$. The box $[-R,R]^n$ is a finite product of compact intervals, hence compact by [[Tychonoff's Theorem]]. A closed subset of a compact set is compact.
 
 ## Connections
 
@@ -50,9 +50,9 @@ Heine–Borel is the foundation for a cascade of classical theorems:
 
 - **[[Bolzano–Weierstrass Theorem]]** — a bounded sequence in $\mathbb{R}^n$ has a convergent subsequence; the compact enclosing box does the work.
 - **[[Brouwer Fixed-Point Theorem]]** — the closed unit ball is compact (closed and bounded), enabling degree-theory and homological arguments.
-- **[[Tychonoff Theorem]]** — the infinite-dimensional generalisation: arbitrary products of compact spaces are compact. Heine–Borel is the $n=1$ finite-dimensional case.
+- **[[Tychonoff's Theorem]]** — the infinite-dimensional generalisation: arbitrary products of compact spaces are compact. Heine–Borel is the $n=1$ finite-dimensional case.
 - **[[Hausdorff Distance]]** — the space of non-empty compact subsets of $\mathbb{R}^n$ is itself complete and compact under the Hausdorff metric, making IFS attractors well-defined.
-- **[[Urysohn Lemma]]** — compact Hausdorff spaces are normal, so Urysohn's construction applies.
+- **[[Urysohn's Lemma]]** — compact Hausdorff spaces are normal, so Urysohn's construction applies.
 - **[[Iterated Function Systems]]** — the Hutchinson operator acts on $\mathcal{K}^*(\mathbb{R}^n)$; Heine–Borel guarantees that iterates stay in a compact ambient space.
 
 ## Lean4 Proof

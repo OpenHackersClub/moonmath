@@ -54,7 +54,7 @@ $$c = \frac{14}{9} \approx 1.556 \in (1, 2) \checkmark$$
 ## Connections
 
 - [[Mean Value Theorem]] — Cauchy's MVT reduces to the standard MVT when $g(x) = x$
-- [[L'Hôpital's Rule]] — L'Hopital's rule for $0/0$ indeterminate forms is proved using Cauchy's MVT
+- [[L'Hôpital's Rule]] — L’Hôpital's rule for $0/0$ indeterminate forms is proved using Cauchy's MVT
 - [[Taylor's Theorem]] — higher-order Taylor remainder estimates use iterated applications of Cauchy's MVT
 - [[Rolle's Theorem]] — the proof constructs an auxiliary function and applies Rolle directly
 

@@ -1,8 +1,8 @@
 +++
-title = "Urysohn Lemma"
+title = "Urysohn's Lemma"
 description = "In a normal space, disjoint closed sets can be separated by a continuous function"
 weight = 40
-tags = ["lean4-proof", "topology", "separation"]
+tags = ["lean4-proof", "topology", "separation", "visualization"]
 latex = "\\exists\\, f : X \\to [0,1],\\quad f|_s = 0,\\; f|_t = 1"
 prerequisites = []
 lean4_status = "complete"
@@ -51,7 +51,7 @@ This inductive "dyadic filling" is the core of Urysohn's construction.
 - **[[Heine–Borel Theorem]]** — compact Hausdorff spaces are normal, so Urysohn applies; in $\mathbb{R}^n$ normality is automatic.
 - **[[Bolzano–Weierstrass Theorem]]** — Urysohn functions give explicit test functions used to separate limit points of sequences.
 - **[[Brouwer Fixed-Point Theorem]]** — Urysohn's lemma underlies the partition-of-unity construction, which feeds into degree theory.
-- **[[Tychonoff Theorem]]** — Tychonoff spaces (completely regular) are precisely those where Urysohn-type separation by continuous functions is available; normality strengthens this to full separation.
+- **[[Tychonoff's Theorem]]** — Tychonoff spaces (completely regular) are precisely those where Urysohn-type separation by continuous functions is available; normality strengthens this to full separation.
 - **[[Hausdorff Distance]]** — Urysohn-type functions appear in the proof that the Hausdorff metric topology on compact subsets of a normal space behaves well.
 - **[[Iterated Function Systems]]** — Partition of unity (an extension of Urysohn) allows gluing local definitions of IFS maps into globally continuous ones.
 

@@ -58,7 +58,7 @@ No deviation is profitable — the uniform mix is a Nash equilibrium.
 ## Connections
 
 - [[von Neumann Minimax]] — Nash's theorem generalises the minimax theorem from two-player zero-sum to $n$-player general-sum games
-- [[Brouwer Fixed Point Theorem]] — Nash's proof relies on Brouwer's (or Kakutani's) fixed point theorem
+- [[Brouwer Fixed-Point Theorem]] — Nash's proof relies on Brouwer's (or Kakutani's) fixed point theorem
 - [[Chebyshev's Inequality]] — mixed strategies over finite supports can be analysed using discrete probability inequalities
 - [[Cauchy–Schwarz Inequality]] — payoff computations under mixed strategies use inner product structure
 

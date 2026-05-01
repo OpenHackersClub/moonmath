@@ -62,8 +62,8 @@ $$(x+y)^{n+1} = x \cdot (x+y)^n + y \cdot (x+y)^n$$
 ## Connections
 
 - [[Quadratic Formula]] — $(x+y)^2 = x^2 + 2xy + y^2$ is the $n=2$ special case
-- [[AM-GM Inequality]] — AM-GM applied to the $\binom{n}{k}$ terms yields useful norm bounds
-- [[Cauchy-Schwarz]] — the square of a sum bound uses the $n=2$ binomial expansion
+- [[AM–GM Inequality]] — AM–GM applied to the $\binom{n}{k}$ terms yields useful norm bounds
+- [[Cauchy–Schwarz]] — the square of a sum bound uses the $n=2$ binomial expansion
 - [[Geometric Series]] — setting $y = 1$ and letting $x \to 1$ connects to sums of powers
 - [[Vieta Formulas]] — the coefficients of $(x - r_1)(x - r_2)\cdots(x - r_n)$ are elementary symmetric polynomials, relatives of binomial coefficients
 

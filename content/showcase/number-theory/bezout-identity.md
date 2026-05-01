@@ -2,7 +2,7 @@
 title = "Bezout's Identity"
 description = "The gcd of two integers is always an integer linear combination of those integers"
 weight = 60
-tags = ["lean4-proof", "number-theory", "linear-combinations"]
+tags = ["lean4-proof", "number-theory", "linear-combinations", "visualization"]
 latex = "\\gcd(a,b) = a \\cdot x + b \\cdot y"
 prerequisites = ["euclidean-algorithm"]
 lean4_status = "complete"

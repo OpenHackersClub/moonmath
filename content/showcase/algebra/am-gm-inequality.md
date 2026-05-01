@@ -1,5 +1,5 @@
 +++
-title = "AM-GM Inequality"
+title = "AM–GM Inequality"
 description = "The arithmetic mean is always at least as large as the geometric mean"
 weight = 20
 tags = ["lean4-proof", "algebra", "inequality", "visualization"]
@@ -63,16 +63,16 @@ Taking square roots (all quantities non-negative):
 $$2\sqrt{ab} \leq a + b \implies \sqrt{ab} \leq \frac{a+b}{2}$$
 
 The general $n$-term case follows by induction combined with the two-term case, or via the
-**weighted AM-GM** inequality with equal weights, which itself follows from the concavity of $\log$.
+**weighted AM–GM** inequality with equal weights, which itself follows from the concavity of $\log$.
 
 ## Connections
 
-AM-GM is tightly connected to several other fundamental results:
+AM–GM is tightly connected to several other fundamental results:
 
-- [[Quadratic Formula]] — the discriminant $b^2 - 4ac \geq 0$ when roots are real is exactly AM-GM
-- [[Cauchy-Schwarz]] — AM-GM is used in its proof; both are instances of Jensen's inequality
-- [[Geometric Series]] — bounding partial products uses AM-GM-style reasoning
-- [[Binomial Theorem]] — the middle term in $(a+b)^2 = a^2 + 2ab + b^2$ embodies the AM-GM core step
+- [[Quadratic Formula]] — the discriminant $b^2 - 4ac \geq 0$ when roots are real is exactly AM–GM
+- [[Cauchy–Schwarz]] — AM–GM is used in its proof; both are instances of Jensen's inequality
+- [[Geometric Series]] — bounding partial products uses AM–GM-style reasoning
+- [[Binomial Theorem]] — the middle term in $(a+b)^2 = a^2 + 2ab + b^2$ embodies the AM–GM core step
 - [[Vieta Formulas]] — product of roots vs. sum of roots echoes the GM vs. AM structure
 
 ## Lean4 Proof
@@ -85,11 +85,11 @@ $\sqrt{ab} \leq (a+b)/2$ from it, and then delegate the weighted general case to
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
-/-- Two-term AM-GM: 2ab ≤ a² + b² (equivalent form). -/
+/-- Two-term AM–GM: 2ab ≤ a² + b² (equivalent form). -/
 theorem am_gm_sq (a b : ℝ) : 2 * (a * b) ≤ a ^ 2 + b ^ 2 :=
   two_mul_le_add_sq a b
 
-/-- Two-term AM-GM for non-negative reals: √(ab) ≤ (a+b)/2. -/
+/-- Two-term AM–GM for non-negative reals: √(ab) ≤ (a+b)/2. -/
 theorem am_gm_two (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
     Real.sqrt (a * b) ≤ (a + b) / 2 := by
   rw [div_le_iff (by norm_num : (0:ℝ) < 2)] at *
@@ -98,7 +98,7 @@ theorem am_gm_two (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
   have h := two_mul_le_add_sq a b
   nlinarith [sq_nonneg (a - b)]
 
-/-- Weighted two-term AM-GM: for weights w₁, w₂ ≥ 0 with w₁ + w₂ = 1, and p₁, p₂ ≥ 0,
+/-- Weighted two-term AM–GM: for weights w₁, w₂ ≥ 0 with w₁ + w₂ = 1, and p₁, p₂ ≥ 0,
     we have p₁^w₁ · p₂^w₂ ≤ w₁·p₁ + w₂·p₂. -/
 theorem am_gm_weighted (w₁ w₂ p₁ p₂ : ℝ)
     (hw₁ : 0 ≤ w₁) (hw₂ : 0 ≤ w₂) (hp₁ : 0 ≤ p₁) (hp₂ : 0 ≤ p₂) (hw : w₁ + w₂ = 1) :

@@ -60,7 +60,7 @@ Rolle's Theorem itself follows from the [[Intermediate Value Theorem]] applied t
 - [[Intermediate Value Theorem]] — Rolle's Theorem (used in the MVT proof) is a special case of IVT applied to $h'$
 - [[Fundamental Theorem of Calculus]] — MVT is the key lemma showing antiderivatives differ by at most a constant
 - [[Taylor's Theorem]] — Taylor's theorem is a higher-order generalisation of the MVT
-- [[L'Hopital's Rule]] — L'Hôpital's rule is proved using a generalised form of the MVT (Cauchy's MVT)
+- [[L’Hôpital's Rule]] — L'Hôpital's rule is proved using a generalised form of the MVT (Cauchy's MVT)
 
 ## Lean4 Proof
 
