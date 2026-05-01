@@ -1,5 +1,5 @@
 +++
-title = "Sylow's Theorems"
+title = "Sylow Theorems"
 description = "Prime-power subgroups always exist, are conjugate, and their count is constrained"
 weight = 30
 tags = ["lean4-proof", "group-theory", "visualization"]
@@ -65,7 +65,7 @@ Total: 1 + 20 + 24 + 15 = 60  ✓
 
 ## Connections
 
-Sylow's theorems are the converse direction of [[Lagrange's Theorem]] — Lagrange says subgroup orders divide $|G|$; Sylow says prime-power divisors actually produce subgroups. They are the main tool for classifying groups of small order and for the group-theoretic step in the [[Impossibility of the Quintic Formula]] (showing $A_5$ has no proper normal subgroups). [[Cauchy's Theorem (Groups)]] is the $k=1$ special case of Sylow I. The conjugacy results resemble the orbit-stabilizer structure underlying the [[Fundamental Theorem of Galois Theory]].
+Sylow theorems are the converse direction of [[Lagrange's Theorem]] — Lagrange says subgroup orders divide $|G|$; Sylow says prime-power divisors actually produce subgroups. They are the main tool for classifying groups of small order and for the group-theoretic step in the [[Impossibility of the Quintic Formula]] (showing $A_5$ has no proper normal subgroups). [[Cauchy's Theorem (Groups)]] is the $k=1$ special case of Sylow I. The conjugacy results resemble the orbit-stabilizer structure underlying the [[Fundamental Theorem of Galois Theory]].
 
 ## Lean4 Proof
 

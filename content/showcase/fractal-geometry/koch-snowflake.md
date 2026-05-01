@@ -2,7 +2,7 @@
 title = "Koch Snowflake"
 description = "Infinite perimeter, finite area — a fractal curve of dimension log 4 / log 3"
 weight = 50
-tags = ["lean4-proof", "visualization", "fractal"]
+tags = ["lean4-proof", "visualization", "fractal-geometry"]
 latex = "P_n = 3s \\left(\\frac{4}{3}\\right)^n"
 prerequisites = ["iterated-function-systems", "hausdorff-dimension"]
 lean4_status = "complete"

@@ -25,7 +25,7 @@ $$\lim_{n \to \infty} \int_X f_n \, d\mu = \int_X f \, d\mu, \qquad \text{equiva
 
 **Example: $f_n(x) = \dfrac{nx}{1 + n^2 x^2}$ on $[0,1]$.**
 
-Dominating function: $|f_n(x)| \leq \tfrac{1}{2}$ for all $x,n$ (AM-GM on $nx$ and $1/(nx)$), so $g(x) = \tfrac{1}{2}$ is integrable.
+Dominating function: $|f_n(x)| \leq \tfrac{1}{2}$ for all $x,n$ (AM–GM on $nx$ and $1/(nx)$), so $g(x) = \tfrac{1}{2}$ is integrable.
 
 Pointwise limit: for each fixed $x > 0$, $f_n(x) = \tfrac{x}{x^2 + 1/n^2} \to 0$.
 

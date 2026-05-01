@@ -1,8 +1,8 @@
 +++
-title = "Tychonoff Theorem"
+title = "Tychonoff's Theorem"
 description = "An arbitrary product of compact spaces is compact in the product topology"
 weight = 50
-tags = ["lean4-proof", "topology", "compactness", "product"]
+tags = ["lean4-proof", "topology", "compactness", "product", "visualization"]
 latex = "\\prod_{i \\in I} X_i \\text{ compact} \\iff \\forall i,\\; X_i \\text{ compact}"
 prerequisites = []
 lean4_status = "complete"
@@ -53,7 +53,7 @@ The proof is equivalent to the Axiom of Choice: for infinite products, neither d
 - **[[Heine–Borel Theorem]]** — the $n$-dimensional case: $[0,1]^n$ is compact as a finite product of compact intervals. Tychonoff is the infinite-dimensional extension.
 - **[[Bolzano–Weierstrass Theorem]]** — in the product (weak) topology on infinite-dimensional spaces, Tychonoff's theorem recovers sequential compactness results (e.g. Banach–Alaoglu theorem for weak-* topology).
 - **[[Brouwer Fixed-Point Theorem]]** — Schauder's fixed-point theorem in Banach spaces uses weak compactness (Tychonoff + Banach–Alaoglu) to generalise Brouwer to infinite dimensions.
-- **[[Urysohn Lemma]]** — a product of completely regular (Tychonoff) spaces is completely regular; Urysohn-type separation passes to products.
+- **[[Urysohn's Lemma]]** — a product of completely regular (Tychonoff) spaces is completely regular; Urysohn-type separation passes to products.
 - **[[Hausdorff Distance]]** — the hyperspace of compact subsets inherits compactness from an ambient compact space; Tychonoff underlies this transfer.
 - **[[Iterated Function Systems]]** — the space of probability measures on a compact space (used in IFS analysis) is compact in the weak-* topology by Tychonoff + Riesz representation.
 

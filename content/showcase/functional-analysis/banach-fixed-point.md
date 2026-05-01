@@ -49,7 +49,7 @@ Distance to x* halves each step (K = 1/2).
 
 ## Connections
 
-- [[Brouwer Fixed Point Theorem]] — the Brouwer theorem (topological fixed point) covers compact convex sets in $\mathbb{R}^n$ without assuming contraction; Banach's theorem covers complete metric spaces without assuming compactness.
+- [[Brouwer Fixed-Point Theorem]] — the Brouwer theorem (topological fixed point) covers compact convex sets in $\mathbb{R}^n$ without assuming contraction; Banach's theorem covers complete metric spaces without assuming compactness.
 - [[Cauchy Criterion]] — the Cauchy sequence construction in the proof uses exactly the Cauchy criterion for convergence in complete spaces.
 - [[Iterated Function Systems]] — IFS attractors are fixed points of the Hutchinson operator (a contraction on the Hausdorff-metric space of compact sets), making Banach's theorem the engine behind fractal geometry.
 - [[Hausdorff Distance]] — the space of non-empty compact subsets of a complete metric space is complete under the Hausdorff metric, so the Banach theorem applies to prove IFS attractor existence.

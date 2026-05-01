@@ -63,7 +63,7 @@ which has $|G|^{p-1}$ elements (choose $g_1,\ldots,g_{p-1}$ freely, then $g_p$ i
 
 ## Connections
 
-Cauchy's theorem is the $k=1$ case of [[Sylow's Theorems]] (Sylow I guarantees a full subgroup of order $p^k$, not just an element of order $p$). It gives a partial converse to [[Lagrange's Theorem]]: Lagrange says element orders divide $|G|$; Cauchy says prime divisors of $|G|$ are realized as element orders. The theorem is applied in the classification of simple groups (e.g.\ showing $A_5$ is simple by ruling out normal $p$-Sylow subgroups), which feeds into the [[Impossibility of the Quintic Formula]]. It also appears implicitly when the [[First Isomorphism Theorem]] is used to factor maps through $p$-quotients. [[Cayley's Theorem]] embeds the group into $S_n$, and Cauchy ensures $S_n$ (for $n \geq p$) contains all the cycle types we expect.
+Cauchy's theorem is the $k=1$ case of [[Sylow Theorems]] (Sylow I guarantees a full subgroup of order $p^k$, not just an element of order $p$). It gives a partial converse to [[Lagrange's Theorem]]: Lagrange says element orders divide $|G|$; Cauchy says prime divisors of $|G|$ are realized as element orders. The theorem is applied in the classification of simple groups (e.g.\ showing $A_5$ is simple by ruling out normal $p$-Sylow subgroups), which feeds into the [[Impossibility of the Quintic Formula]]. It also appears implicitly when the [[First Isomorphism Theorem]] is used to factor maps through $p$-quotients. [[Cayley's Theorem]] embeds the group into $S_n$, and Cauchy ensures $S_n$ (for $n \geq p$) contains all the cycle types we expect.
 
 ## Lean4 Proof
 

@@ -2,7 +2,7 @@
 title = "Euler's Totient Function"
 description = "φ(n) counts integers up to n coprime to n, and governs modular exponentiation"
 weight = 90
-tags = ["lean4-proof", "number-theory", "modular-arithmetic", "group-theory"]
+tags = ["lean4-proof", "number-theory", "modular-arithmetic", "group-theory", "visualization"]
 latex = "a^{\\varphi(n)} \\equiv 1 \\pmod{n}"
 prerequisites = ["fermats-little-theorem", "bezout-identity", "chinese-remainder-theorem"]
 lean4_status = "complete"

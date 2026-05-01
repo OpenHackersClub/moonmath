@@ -47,7 +47,7 @@ Four cosets, each of size 2: $8 = 2 \times 4$. Cosets partition $G$ — they are
 
 ## Connections
 
-Lagrange's theorem is the gateway to [[Sylow's Theorems]], which ask the converse: for which divisors $p^k$ of $|G|$ does a subgroup of that order actually *exist*? It also underpins [[Cauchy's Theorem (Groups)]] (every prime divisor of $|G|$ yields an element of that order) and the counting in the [[First Isomorphism Theorem]]. More broadly it echoes through [[Fundamental Theorem of Galois Theory]] — subgroup indices equal field extension degrees — and appears in the proof of the [[Impossibility of the Quintic Formula]] via solvable group chains.
+Lagrange's theorem is the gateway to [[Sylow Theorems]], which ask the converse: for which divisors $p^k$ of $|G|$ does a subgroup of that order actually *exist*? It also underpins [[Cauchy's Theorem (Groups)]] (every prime divisor of $|G|$ yields an element of that order) and the counting in the [[First Isomorphism Theorem]]. More broadly it echoes through [[Fundamental Theorem of Galois Theory]] — subgroup indices equal field extension degrees — and appears in the proof of the [[Impossibility of the Quintic Formula]] via solvable group chains.
 
 ## Lean4 Proof
 

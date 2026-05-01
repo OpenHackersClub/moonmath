@@ -57,7 +57,7 @@ Hadamard's inequality follows from [[QR Decomposition]] (Gram–Schmidt) combine
 ```lean4
 -- We prove the 2x2 instance of Hadamard's inequality explicitly using decide-style arithmetic.
 -- The key algebraic fact: |ad - bc|^2 <= (a^2+b^2)(c^2+d^2)
--- which follows from the Cauchy-Schwarz inequality (a^2+b^2)(c^2+d^2) >= (ac+bd)^2
+-- which follows from the Cauchy–Schwarz inequality (a^2+b^2)(c^2+d^2) >= (ac+bd)^2
 -- and (ad-bc)^2 + (ac+bd)^2 = (a^2+b^2)(c^2+d^2).
 theorem hadamard_identity_2x2 (a b c d : ℝ) :
     (a * d - b * c) ^ 2 + (a * c + b * d) ^ 2 = (a ^ 2 + b ^ 2) * (c ^ 2 + d ^ 2) := by

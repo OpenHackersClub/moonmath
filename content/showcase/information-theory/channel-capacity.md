@@ -62,7 +62,7 @@ The BSC is symmetric about $p = 1/2$, so $C(p) = C(1-p)$. The maximum input dist
 
 ## Connections
 
-Channel capacity is defined via [[Mutual Information]] and saturated by the Gaussian channel variant of the [[Cauchy-Schwarz Inequality]]. The noiseless channel ($p = 0$) achieves the limit established by the [[Source Coding Theorem]].
+Channel capacity is defined via [[Mutual Information]] and saturated by the Gaussian channel variant of the [[Cauchy–Schwarz Inequality]]. The noiseless channel ($p = 0$) achieves the limit established by the [[Source Coding Theorem]].
 
 ## Lean4 Proof
 

@@ -2,7 +2,7 @@
 title = "Iterated Function Systems"
 description = "Constructing fractals via contractive affine transformations"
 weight = 30
-tags = ["interactive", "visualization", "fractal", "ifs-3d"]
+tags = ["lean4-proof", "interactive", "visualization", "fractal-geometry", "ifs-3d"]
 latex = "A = \\bigcup_{i=1}^{N} f_i(A)"
 prerequisites = ["hausdorff-distance", "hausdorff-dimension"]
 lean4_status = "complete"

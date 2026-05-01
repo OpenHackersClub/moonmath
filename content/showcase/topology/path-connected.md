@@ -51,7 +51,7 @@ The path-connectedness implication underpins many classical results:
 
 - **[[Intermediate Value Theorem]]** — the key ingredient: $[0,1]$ is connected because $\mathbb{R}$ satisfies the least upper bound property; the IVT is precisely the statement that continuous images of connected sets are connected.
 - **[[Heine–Borel Theorem]]** — closed bounded subsets of $\mathbb{R}^n$ are compact; combined with path-connectedness, this lets us conclude that such sets (like the annulus) are both compact and connected.
-- **[[Brouwer Fixed Point Theorem]]** — the closed unit ball is path-connected (straight-line paths stay inside) and hence connected, a prerequisite for topological degree arguments.
+- **[[Brouwer Fixed-Point Theorem]]** — the closed unit ball is path-connected (straight-line paths stay inside) and hence connected, a prerequisite for topological degree arguments.
 - **[[Urysohn's Lemma]]** — in a normal space, connected and path-connected sets can be separated by continuous real-valued functions, tying separation axioms to path structure.
 
 ## Lean4 Proof

@@ -60,7 +60,7 @@ The Lagrange remainder for $T_n$ at $x = 0.5$: $|R_n(0.5)| \le \dfrac{(0.5)^{n+1
 - [[Mean Value Theorem]] — the $n=0$ base case and the Lagrange remainder step both use MVT
 - [[Fundamental Theorem of Calculus]] — the integral remainder representation of $R_n$ comes from FTC applied $n$ times
 - [[Chain Rule]] — used when computing $f^{(k)}(x_0)$ for composite functions
-- [[L'Hopital's Rule]] — Taylor expansions provide an alternative route to L'Hôpital-type limits
+- [[L’Hôpital's Rule]] — Taylor expansions provide an alternative route to L'Hôpital-type limits
 - [[Intermediate Value Theorem]] — continuity required for $f^{(n)}$ invokes IVT-like arguments
 
 ## Lean4 Proof

@@ -2,9 +2,11 @@
 title = "Quadratic Formula"
 description = "Solve any quadratic equation using the discriminant"
 weight = 10
-tags = ["algebra", "polynomials", "equations"]
+tags = ["lean4-proof", "algebra", "polynomials", "equations", "visualization"]
 premier = true
 latex = "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+prerequisites = []
+lean4_status = "sorry"
 +++
 
 The **quadratic formula** gives the solutions to any quadratic equation $ax^2 + bx + c = 0$ where $a \neq 0$:

@@ -2,7 +2,7 @@
 title = "Chinese Remainder Theorem"
 description = "Simultaneous congruences with coprime moduli have a unique solution mod their product"
 weight = 70
-tags = ["lean4-proof", "number-theory", "modular-arithmetic"]
+tags = ["lean4-proof", "number-theory", "modular-arithmetic", "visualization"]
 latex = "\\mathbb{Z}/mn\\mathbb{Z} \\cong \\mathbb{Z}/m\\mathbb{Z} \\times \\mathbb{Z}/n\\mathbb{Z}"
 prerequisites = ["bezout-identity", "euclidean-algorithm"]
 lean4_status = "complete"

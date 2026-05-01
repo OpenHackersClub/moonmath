@@ -2,7 +2,7 @@
 title = "Euclidean Algorithm"
 description = "The oldest surviving algorithm, computing the greatest common divisor via iterated remainders"
 weight = 50
-tags = ["lean4-proof", "number-theory", "algorithm"]
+tags = ["lean4-proof", "number-theory", "algorithm", "visualization"]
 latex = "\\gcd(m,n) = \\gcd(n \\bmod m, m)"
 prerequisites = ["fundamental-theorem-arithmetic"]
 lean4_status = "complete"

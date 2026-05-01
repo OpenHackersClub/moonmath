@@ -54,7 +54,7 @@ Minimax value: $v^* = 3(1/2) + 2(3/4) - 4(3/4)(1/2) = 3/2 + 3/2 - 3/2 = 3/2$.
 - [[LP Duality]] — the minimax theorem and LP duality are equivalent; each is a consequence of the other
 - [[Nash Equilibrium Existence]] — Nash's theorem generalises the minimax theorem to non-zero-sum games via Brouwer's fixed point theorem
 - [[Convex Function]] — the minimax theorem requires convexity in one variable and concavity in the other
-- [[Brouwer Fixed Point Theorem]] — Nash's proof of minimax for general games uses Brouwer's fixed point theorem
+- [[Brouwer Fixed-Point Theorem]] — Nash's proof of minimax for general games uses Brouwer's fixed point theorem
 
 ## Lean4 Proof
 

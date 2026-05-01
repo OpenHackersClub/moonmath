@@ -2,7 +2,7 @@
 title = "Bolzano–Weierstrass Theorem"
 description = "Every bounded sequence in ℝⁿ has a convergent subsequence"
 weight = 20
-tags = ["lean4-proof", "topology", "sequences", "compactness"]
+tags = ["lean4-proof", "topology", "sequences", "compactness", "visualization"]
 latex = "\\text{bounded } (x_n) \\subseteq \\mathbb{R}^n \\implies \\exists\\, \\text{convergent subsequence}"
 prerequisites = []
 lean4_status = "complete"
@@ -46,9 +46,9 @@ Alternatively, for $n=1$: nest closed intervals by bisection — at each step, o
 
 - **[[Heine–Borel Theorem]]** — the ambient compact box supplies sequential compactness.
 - **[[Brouwer Fixed-Point Theorem]]** — sequential compactness arguments underpin degree theory.
-- **[[Tychonoff Theorem]]** — in infinite dimensions, compactness (and hence Bolzano–Weierstrass) fails for the norm topology; Tychonoff's theorem recovers it in the product (weak) topology.
+- **[[Tychonoff's Theorem]]** — in infinite dimensions, compactness (and hence Bolzano–Weierstrass) fails for the norm topology; Tychonoff's theorem recovers it in the product (weak) topology.
 - **[[Hausdorff Distance]]** — the Blaschke selection theorem (Bolzano–Weierstrass for compact sets) follows: a bounded sequence of compact sets has a subsequence convergent in $d_H$.
-- **[[Urysohn Lemma]]** — Urysohn functions are used to separate cluster points; the separation relies on the same normal-space axioms underlying convergence arguments.
+- **[[Urysohn's Lemma]]** — Urysohn functions are used to separate cluster points; the separation relies on the same normal-space axioms underlying convergence arguments.
 - **[[Iterated Function Systems]]** — the attractor is the unique fixed compact set; Bolzano–Weierstrass guarantees that any sequence of approximating sets has cluster points.
 
 ## Lean4 Proof

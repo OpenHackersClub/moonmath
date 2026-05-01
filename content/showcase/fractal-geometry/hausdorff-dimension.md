@@ -2,7 +2,7 @@
 title = "Hausdorff Dimension"
 description = "Measuring the fractional dimension of self-similar sets"
 weight = 20
-tags = ["visualization", "fractal"]
+tags = ["lean4-proof", "visualization", "fractal-geometry"]
 latex = "d = \\frac{\\log N}{\\log (1/r)}"
 prerequisites = []
 lean4_status = "sorry"
