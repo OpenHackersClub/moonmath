@@ -41,6 +41,7 @@ Thumbs.db
 /lean-project/.lake/
 /lean-project/build/
 /lean-project/_scratch_*.lean
+/lean-project/MoonMath/Review/
 
 # Docker
 docker-compose.override.yml
