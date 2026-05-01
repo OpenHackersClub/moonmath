@@ -68,17 +68,34 @@ Mutual information is the fundamental quantity whose maximization defines [[Chan
 ## Lean4 Proof
 
 ```lean4
-/-- Verify I(X;Y) = 0 for the uniform independent distribution on {0,1}^2.
-    H(X) = H(Y) = log 2; H(X,Y) = 2 * log 2; I = 0. -/
-theorem mutual_info_independent :
-    let H_X  : ℚ := 1  -- log 2 in units of log 2
-    let H_Y  : ℚ := 1
-    let H_XY : ℚ := 2
-    H_X + H_Y - H_XY = 0 := by norm_num
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 
-/-- Verify I(X;X) = H(X): full dependence gives I equal to entropy. -/
-theorem mutual_info_self :
-    let H_X  : ℚ := 1  -- log 2 in units of log 2
-    let H_XY : ℚ := 1  -- H(X,X) = H(X)
-    H_X + H_X - H_XY = H_X := by norm_num
+open Real
+
+/-- Shannon entropy of a 2-point distribution with probabilities p and (1-p).
+    H(p) = -p * log p - (1-p) * log (1-p). -/
+noncomputable def binaryEntropy (p : ℝ) : ℝ :=
+  -(p * Real.log p) - ((1 - p) * Real.log (1 - p))
+
+/-- Mutual information for a joint distribution on a finite type,
+    defined as I(X;Y) = H(X) + H(Y) - H(X,Y). -/
+noncomputable def mutualInfo {α β : Type*} [Fintype α] [Fintype β]
+    (joint : α → β → ℝ) : ℝ :=
+  let margX : α → ℝ := fun a => ∑ b, joint a b
+  let margY : β → ℝ := fun b => ∑ a, joint a b
+  let hX    := -∑ a, margX a * Real.log (margX a)
+  let hY    := -∑ b, margY b * Real.log (margY b)
+  let hXY   := -∑ a, ∑ b, joint a b * Real.log (joint a b)
+  hX + hY - hXY
+
+/-- I(X;X) = H(X): a variable is maximally informative about itself.
+    For the diagonal joint (p(a,b) = p_a when a=b, else 0):
+    H(X,X) = H(X), so I = H(X) + H(X) - H(X) = H(X). -/
+theorem mutual_info_self_eq_entropy {α : Type*} [DecidableEq α] [Fintype α]
+    (pmf : α → ℝ) :
+    let diagJoint : α → α → ℝ := fun a b => if a = b then pmf a else 0
+    mutualInfo diagJoint =
+      -∑ a, pmf a * Real.log (pmf a) := by
+  simp [mutualInfo, Finset.sum_ite_eq', Finset.mem_univ]
+  ring
 ```

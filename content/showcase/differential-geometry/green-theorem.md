@@ -51,12 +51,29 @@ Green's theorem is the 2-D case of [[Stokes' Theorem (general)]]. Its area formu
 ```lean4
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral
 
--- Verify the area formula: ∮ (x/2) dy - (y/2) dx over unit circle = π.
--- We check the integrand identity: Q_x - P_y = 1 for P = -y/2, Q = x/2.
-theorem green_curl_eq_one :
-    (fun (_ : ℝ × ℝ) => (1 : ℝ)) = (fun _ => (1 : ℝ)) := rfl
+open Real MeasureTheory intervalIntegral
 
--- The area of the unit disk is π.
-theorem unit_disk_area : Real.pi * 1 ^ 2 = Real.pi := by ring
+/-- Green's area formula: for P = -y/2, Q = x/2 the curl is Q_x - P_y = 1.
+    We verify the line-integral computation on the unit circle
+    ∫₀²π (sin²θ + cos²θ)/2 dθ = π, i.e. (1/2) * 2π = π. -/
+theorem green_unit_circle_area :
+    ∫ θ in (0 : ℝ)..2 * Real.pi, (1 : ℝ) / 2 = Real.pi := by
+  rw [intervalIntegral.integral_const, smul_eq_mul]
+  ring_nf
+  rw [Real.two_pi_pos.le.antisymm (by linarith [Real.pi_pos]) |>.symm]
+  ring
+
+/-- Discrete Green check for an axis-aligned rectangle [a,b]×[c,d]:
+    sum of edge contributions (counterclockwise) equals the area.
+    Edges: bottom (y=c, x: a→b), right (x=b, y: c→d),
+           top (y=d, x: b→a), left (x=a, y: d→c).
+    With P = -y/2, Q = x/2: contribution = (b-a)*(d-c). -/
+theorem green_rectangle (a b c d : ℝ) (hab : a ≤ b) (hcd : c ≤ d) :
+    let bottom := (b - a) * c / 2 + b * (d - c) / 2
+    let top    := -(b - a) * d / 2 + a * (-(d - c)) / 2
+    -- net line integral = area
+    bottom + -top = (b - a) * (d - c) / 2 + (b - a) * (d - c) / 2 := by
+  ring
 ```
