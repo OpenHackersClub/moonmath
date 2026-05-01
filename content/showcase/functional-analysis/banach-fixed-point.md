@@ -61,10 +61,11 @@ import Mathlib.Topology.MetricSpace.Contracting
 
 /-- **Banach Fixed Point Theorem**: contraction on complete metric space has unique fixed point.
     Uses `ContractingWith.fixedPoint_isFixedPt` and `ContractingWith.fixedPoint_unique`. -/
-theorem banach_fixed_point {X : Type*} [MetricSpace X] [CompleteSpace X] [Nonempty X]
-    {K : ℝ≥0} (f : X → X) (hf : ContractingWith K f) :
+theorem banach_fixed_point
+    {X : Type*} [MetricSpace X] [CompleteSpace X] [Nonempty X]
+    {K : NNReal} {f : X → X} (hf : ContractingWith K f) :
     ∃! x : X, f x = x :=
   ⟨ContractingWith.fixedPoint f hf,
    ContractingWith.fixedPoint_isFixedPt hf,
-   fun y hy => (ContractingWith.fixedPoint_unique hf hy).symm⟩
+   fun y hy => ContractingWith.fixedPoint_unique hf hy⟩
 ```

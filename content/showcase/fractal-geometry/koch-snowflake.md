@@ -92,7 +92,7 @@ open Filter Topology
 
 /-- The perimeter of the Koch snowflake at iteration `n`,
     starting from a triangle of side `s`. -/
-def kochPerim (s : ℝ) : ℕ → ℝ
+noncomputable def kochPerim (s : ℝ) : ℕ → ℝ
   | 0     => 3 * s
   | n + 1 => (4 / 3) * kochPerim s n
 
@@ -106,7 +106,8 @@ theorem koch_perim_formula (s : ℝ) (n : ℕ) :
 /-- The Koch snowflake perimeter diverges to `+∞` for any positive side length. -/
 theorem koch_perim_tendsto_atTop (s : ℝ) (hs : 0 < s) :
     Tendsto (kochPerim s) atTop atTop := by
-  simp_rw [koch_perim_formula]
+  have heq : kochPerim s = fun n => 3 * s * (4 / 3) ^ n := funext (koch_perim_formula s)
+  rw [heq]
   apply Tendsto.const_mul_atTop (by positivity)
   exact tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 4 / 3)
 

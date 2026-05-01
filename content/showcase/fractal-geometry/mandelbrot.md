@@ -34,14 +34,17 @@ The boundary of the Mandelbrot set has [[Hausdorff Dimension]] equal to 2. The f
 ## Lean4 Proof
 
 ```lean4
+import Mathlib
+
 /-- Iteration of z ↦ z² + c starting from z₀ = 0. -/
 def mandelbrotIter (c : ℂ) : Nat → ℂ
   | 0 => 0
   | n + 1 => (mandelbrotIter c n) ^ 2 + c
 
-/-- A point c is in the Mandelbrot set if its orbit stays bounded. -/
+/-- A point c is in the Mandelbrot set if its orbit stays bounded.
+    Uses `‖z‖` (the norm) in place of `Complex.abs` which is not a constant. -/
 def InMandelbrotSet (c : ℂ) : Prop :=
-  ∀ n : Nat, Complex.abs (mandelbrotIter c n) ≤ 2
+  ∀ n : Nat, ‖mandelbrotIter c n‖ ≤ 2
 
 /-- The Mandelbrot set is connected (Douady-Hubbard, 1982). -/
 theorem mandelbrot_connected :

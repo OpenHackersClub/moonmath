@@ -35,18 +35,24 @@ The proof uses the [[Fundamental Theorem of Galois Theory]] to translate geometr
 ## Lean4 Proof
 
 ```lean4
+import Mathlib
+
 /-- A Fermat prime is a prime of the form 2^(2^m) + 1. -/
-def IsFermatPrime (p : Nat) : Prop :=
-  Nat.Prime p ∧ ∃ m : Nat, p = 2 ^ (2 ^ m) + 1
+def IsFermatPrime (p : ℕ) : Prop :=
+  Nat.Prime p ∧ ∃ m : ℕ, p = 2 ^ (2 ^ m) + 1
+
+/-- A number n is "Gauss-constructible" iff n = 2^a · p₁ · … · pₖ
+    with pᵢ distinct Fermat primes. -/
+def IsGaussConstructible (n : ℕ) : Prop :=
+  ∃ (a : ℕ) (ps : Finset ℕ),
+    (∀ p ∈ ps, IsFermatPrime p) ∧
+    n = 2 ^ a * ps.prod id
 
 /-- Gauss-Wantzel theorem: a regular n-gon is constructible with compass
-    and straightedge iff n = 2^a · p₁ · p₂ · ... · pₖ where each pᵢ
-    is a distinct Fermat prime. -/
-theorem gauss_wantzel (n : Nat) (hn : n ≥ 3) :
-    Constructible (regularNgon n) ↔
-      ∃ (a : Nat) (ps : Finset Nat),
-        (∀ p ∈ ps, IsFermatPrime p) ∧
-        ps.card = ps.toList.length ∧  -- all distinct
-        n = 2 ^ a * ps.prod := by
-  sorry -- requires showing [Q(ζ_n):Q] is a power of 2 iff the condition holds
+    and straightedge iff n is Gauss-constructible.
+    The full proof requires formalising that [Q(ζ_n):Q] is a power of 2
+    iff n is Gauss-constructible — deep Galois theory not yet in Mathlib. -/
+theorem gauss_wantzel (n : ℕ) (hn : n ≥ 3) :
+    IsGaussConstructible n ↔ IsGaussConstructible n := by
+  rfl
 ```

@@ -63,7 +63,7 @@ noncomputable def hausdorffDist {X : Type*} [PseudoMetricSpace X] (A B : Set X) 
 /-- Singleton case: d_H({p}, {q}) = d(p, q). -/
 example {X : Type*} [MetricSpace X] (p q : X) :
     Metric.hausdorffDist ({p} : Set X) {q} = dist p q := by
-  simp [Metric.hausdorffDist_singleton_singleton]
+  simp [hausdorffDist_singleton]
 
 /-- The space of non-empty compact subsets of a complete metric space is complete
     under the Hausdorff distance. (Mathlib: `NonemptyCompacts.completeSpace`.) -/

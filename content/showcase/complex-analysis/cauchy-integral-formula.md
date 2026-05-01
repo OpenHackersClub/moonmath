@@ -65,6 +65,6 @@ open Complex MeasureTheory
 theorem cauchy_integral_formula {R : ℝ} {c w : ℂ} {f : ℂ → ℂ}
     (hf : DiffContOnCl ℂ f (Metric.ball c R))
     (hw : w ∈ Metric.ball c R) :
-    ((2 * π * Complex.I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • f z) = f w :=
+    ((2 * Real.pi * Complex.I)⁻¹ • ∮ z in C(c, R), (z - w)⁻¹ • f z) = f w :=
   hf.two_pi_i_inv_smul_circleIntegral_sub_inv_smul hw
 ```

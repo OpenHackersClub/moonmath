@@ -62,16 +62,17 @@ The identity $d^2 = 0$ is the algebraic engine behind [[Stokes' Theorem (general
 ```lean4
 import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 
-open VectorField
+open ContinuousAlternatingMap
 
 /-- The second exterior derivative of a C^2 form is zero.
-    Wraps Mathlib's `extDeriv_extDeriv`. -/
-theorem extDeriv_sq_zero {E F : Type*}
-    [NontriviallyNormedField ℝ]
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : ℕ} {ω : E → E [⋀^Fin n]→L[ℝ] F}
-    (h : ContDiff ℝ 2 ω) :
+    Wraps Mathlib's `extDeriv_extDeriv`.
+    Requires `IsRCLikeNormedField 𝕜` (ℝ or ℂ) so that `minSmoothness 𝕜 2 = 2`. -/
+theorem extDeriv_sq_zero {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {n : ℕ} {ω : E → E [⋀^Fin n]→L[𝕜] F}
+    (h : ContDiff 𝕜 2 ω) :
     extDeriv (extDeriv ω) = 0 :=
-  extDeriv_extDeriv h (by norm_num [minSmoothness])
+  extDeriv_extDeriv h (by simp [minSmoothness_of_isRCLikeNormedField])
 ```
