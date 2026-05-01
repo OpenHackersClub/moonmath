@@ -1,8 +1,8 @@
 use leptos::prelude::*;
-use leptos_meta::*;
 use leptos_router::components::A;
 
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
+use crate::components::seo::PageMeta;
 use crate::fetch::json_resource_once;
 
 #[component]
@@ -12,7 +12,11 @@ pub fn ConceptsIndexPage() -> impl IntoView {
     );
 
     view! {
-        <Title text="Concepts — MoonMath"/>
+        <PageMeta
+            title="Concepts".to_string()
+            description="Index of every cross-referenced page in MoonMath, sorted by citation count. Follow concept threads through the showcase library.".to_string()
+            path="/showcase/concepts".to_string()
+        />
         <div class="concepts-page">
             <Breadcrumbs crumbs=vec![
                 Crumb { label: "Home".into(), href: "/".into() },

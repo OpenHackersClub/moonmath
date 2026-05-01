@@ -1,8 +1,8 @@
 use leptos::prelude::*;
-use leptos_meta::*;
 use leptos_router::components::A;
 
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
+use crate::components::seo::PageMeta;
 use crate::fetch::json_resource_once;
 
 #[component]
@@ -11,7 +11,11 @@ pub fn ShowcaseIndexPage() -> impl IntoView {
         json_resource_once::<Vec<moonmath_types::ShowcaseCategory>>("/data/showcase/categories.json");
 
     view! {
-        <Title text="Showcase — MoonMath"/>
+        <PageMeta
+            title="Showcase".to_string()
+            description="Browse interactive explorations of theorems, proofs, and mathematical findings on MoonMath, organized by category with Lean4 proof snippets.".to_string()
+            path="/showcase".to_string()
+        />
         <div class="showcase-index-page">
             <Breadcrumbs crumbs=vec![
                 Crumb { label: "Home".into(), href: "/".into() },

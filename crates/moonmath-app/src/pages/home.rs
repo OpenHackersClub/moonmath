@@ -1,7 +1,7 @@
 use leptos::prelude::*;
-use leptos_meta::*;
 use leptos_router::components::A;
 
+use crate::components::seo::PageMeta;
 use crate::fetch::json_resource_once;
 
 #[component]
@@ -10,7 +10,12 @@ pub fn HomePage() -> impl IntoView {
         json_resource_once::<Vec<moonmath_types::ShowcaseCategory>>("/data/showcase/categories.json");
 
     view! {
-        <Title text="MoonMath — Interactive Math Visualization"/>
+        <PageMeta
+            title="MoonMath — Interactive Math Visualization".to_string()
+            description="Interactive math visualization, algorithm demos, and Lean4 proof compilation. Browse formal proofs by category with KaTeX-rendered formulas and Lean4 code blocks.".to_string()
+            path="/".to_string()
+            with_suffix=false
+        />
         <div class="home-page">
             <section class="hero">
                 <h1>"MoonMath"</h1>

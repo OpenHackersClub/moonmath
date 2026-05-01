@@ -1,12 +1,16 @@
 use leptos::prelude::*;
-use leptos_meta::*;
 
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
+use crate::components::seo::PageMeta;
 
 #[component]
 pub fn InspirationsPage() -> impl IntoView {
     view! {
-        <Title text="Inspirations — MoonMath"/>
+        <PageMeta
+            title="Inspirations".to_string()
+            description="The luminaries, ideas, and instruments that light the path of MoonMath — Lean 4, Mathlib, fractal geometry, 3Blue1Brown, and the tooling stack.".to_string()
+            path="/inspirations".to_string()
+        />
         <div class="ins-page">
             <Breadcrumbs crumbs=vec![
                 Crumb { label: "Home".into(), href: "/".into() },

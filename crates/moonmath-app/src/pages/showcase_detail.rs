@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-use leptos_meta::*;
 use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
 
@@ -7,6 +6,7 @@ use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
 use crate::components::compile_panel::CompilePanel;
 use crate::components::fractal_canvas::FractalVisualizations;
 use crate::components::ifs_canvas::Ifs3dCanvas;
+use crate::components::seo::ArticleMeta;
 use crate::fetch::json_resource;
 
 #[server(CompileLean, "/api")]
@@ -61,9 +61,37 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                             data.tags.iter().any(|t| t == "fractal")
                             && data.tags.iter().any(|t| t == "visualization");
                         let has_ifs_3d = data.tags.iter().any(|t| t == "ifs-3d");
+                        let seo_tags = data.tags.clone();
+                        let seo_description = if data.description.is_empty() {
+                            format!(
+                                "Interactive walkthrough of {} on MoonMath.",
+                                title_for_meta
+                            )
+                        } else {
+                            data.description.clone()
+                        };
+                        let seo_date = if data.date_published.is_empty() {
+                            String::from("2026-01-01")
+                        } else {
+                            data.date_published.clone()
+                        };
+                        let canonical_path = {
+                            let p = params.read();
+                            format!(
+                                "/showcase/{}/{}",
+                                p.get("category").unwrap_or_default(),
+                                p.get("slug").unwrap_or_default()
+                            )
+                        };
                         view! {
-                            <Title text=format!("{} — MoonMath Showcase", title_for_meta)/>
-                            <div class="showcase-detail-page">
+                            <ArticleMeta
+                                title=title_for_meta
+                                description=seo_description
+                                path=canonical_path
+                                tags=seo_tags
+                                date_published=seo_date
+                            />
+                            <article class="showcase-detail-page">
                                 <Breadcrumbs crumbs=vec![
                                     Crumb { label: "Home".into(), href: "/".into() },
                                     Crumb { label: "Showcase".into(), href: "/showcase".into() },
@@ -189,7 +217,7 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                                         })}
                                     </div>
                                 </nav>
-                            </div>
+                            </article>
                         }.into_any()
                     }
                     Err(e) => {
