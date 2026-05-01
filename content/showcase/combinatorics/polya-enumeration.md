@@ -4,7 +4,7 @@ description = "The cycle index polynomial encodes all Burnside fixed-point count
 weight = 120
 tags = ["lean4-proof", "combinatorics", "visualization"]
 latex = "P_G(x_1,\\ldots,x_n) = \\frac{1}{|G|}\\sum_{g\\in G}x_1^{c_1(g)}\\cdots x_n^{c_n(g)}"
-prerequisites = ["burnside-counting"]
+prerequisites = ["orbit-counting-applications"]
 lean4_status = "complete"
 +++
 
@@ -68,7 +68,7 @@ Total colorings: $1+4+4+2+4+1 = 16 = 2^4$. Orbits: 6. Check!
 
 ## Connections
 
-Polya enumeration refines [[Burnside Counting]] into a generating function. It is related to [[Catalan Numbers]] (necklace-like structures) and ultimately connects to [[Inclusion-Exclusion Principle]] for orbit-size computations. The cycle index is a character of the symmetric group representation theory.
+Polya enumeration refines [[Orbit Counting Applications]] into a generating function. It is related to [[Catalan Numbers]] (necklace-like structures) and ultimately connects to [[Inclusion-Exclusion Principle]] for orbit-size computations. The cycle index is a character of the symmetric group representation theory.
 
 ## Lean4 Proof
 

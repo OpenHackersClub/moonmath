@@ -1,5 +1,5 @@
 +++
-title = "Baire Category Theorem (Topology)"
+title = "Baire Category Theorem"
 description = "In a complete metric space, the intersection of countably many dense open sets is dense"
 weight = 140
 tags = ["lean4-proof", "topology", "visualization"]
@@ -7,6 +7,8 @@ latex = "\\bigcap_{n=1}^{\\infty} U_n \\text{ dense},\\quad U_n \\text{ open den
 prerequisites = ["heine-borel"]
 lean4_status = "complete"
 +++
+
+Originally indexed under Analysis; canonical home is Topology since the result is a property of the space.
 
 ## Statement
 
@@ -56,6 +58,9 @@ Nowhere-dense test for $\{q\}$: its closure is $\{q\}$, whose interior is empty.
 - [[Bolzano–Weierstrass Theorem]] — completeness of $\mathbb{R}^n$ underlies both: Bolzano–Weierstrass gives sequential compactness, Baire gives category density.
 - [[Intermediate Value Theorem]] — a corollary-style consequence: continuous functions on $[a,b]$ cannot be everywhere-differentiable with derivative identically zero except on a meager set.
 - [[Urysohn's Lemma]] — Urysohn's construction works in normal spaces; Baire's theorem is the key to the open-mapping theorem in Banach spaces, which are complete metric spaces.
+- [[Uniform Boundedness Principle]] — the Banach–Steinhaus theorem is proved by applying Baire to the complete metric space structure of Banach spaces.
+- [[Open Mapping Theorem (Banach)]] — a surjective bounded linear map between Banach spaces is open; the proof partitions the codomain into meager sets and invokes Baire.
+- [[Closed Graph Theorem]] — a linear map between Banach spaces with a closed graph is bounded; the proof is a direct application of the Open Mapping Theorem, itself founded on Baire.
 
 ## Lean4 Proof
 
