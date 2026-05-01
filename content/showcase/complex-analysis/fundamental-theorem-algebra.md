@@ -1,8 +1,8 @@
 +++
 title = "Fundamental Theorem of Algebra"
 description = "Every non-constant polynomial with complex coefficients has at least one root in ℂ"
-weight = 50
-tags = ["lean4-proof", "analysis", "visualization"]
+weight = 100
+tags = ["lean4-proof", "complex-analysis", "visualization"]
 latex = "\\deg p \\geq 1,\\; p \\in \\mathbb{C}[z] \\implies \\exists z_0 \\in \\mathbb{C}: p(z_0) = 0"
 prerequisites = []
 lean4_status = "complete"

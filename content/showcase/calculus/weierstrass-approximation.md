@@ -59,6 +59,7 @@ The uniform error $\|B_n g - g\|_\infty = O(n^{-1/2})$ for Lipschitz $g$; higher
 - [[Extreme Value Theorem]] — $f$ is uniformly continuous on $[a,b]$ (since it is compact) — this is the key regularity that makes the Bernstein approximation converge
 - [[Heine-Borel Theorem]] — the compact domain $[a,b]$ is essential; the theorem fails for all of $\mathbb{R}$ (polynomials cannot uniformly approximate $e^x$)
 - [[Intermediate Value Theorem]] — the density of polynomials in $C[a,b]$ is the analytic analogue of the IVT: every continuous function is a limit of explicit elementary ones
+- [[Stone–Weierstrass Theorem]] — the functional-analysis generalization: any subalgebra of $C(K)$ that separates points and contains constants is dense; Weierstrass is the case where the subalgebra is $\mathbb{R}[x]$ on $[a,b]$
 
 ## Lean4 Proof
 

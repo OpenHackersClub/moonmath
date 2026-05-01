@@ -59,7 +59,7 @@ Non-separable example (co-countable topology comparison):
 ## Connections
 
 - [[Heine–Borel Theorem]] — compact metric spaces are separable (a compact metric space has a finite $\varepsilon$-net for every $\varepsilon > 0$, yielding a countable dense set).
-- [[Baire Category Theorem (Topology)]] — in a complete metric space, separability is equivalent to second-countability via `IsSeparable.secondCountableTopology`.
+- [[Baire Category Theorem]] — in a complete metric space, separability is equivalent to second-countability via `IsSeparable.secondCountableTopology`.
 - [[Bolzano–Weierstrass Theorem]] — a separable metric space satisfies a sequential compactness criterion: bounded sequences have convergent subsequences (Bolzano–Weierstrass gives this for $\mathbb{R}^n$).
 
 ## Lean4 Proof

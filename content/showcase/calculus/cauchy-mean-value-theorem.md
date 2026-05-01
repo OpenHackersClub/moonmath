@@ -58,6 +58,8 @@ $$c = \frac{14}{9} \approx 1.556 \in (1, 2) \checkmark$$
 - [[Taylor's Theorem]] — higher-order Taylor remainder estimates use iterated applications of Cauchy's MVT
 - [[Rolle's Theorem]] — the proof constructs an auxiliary function and applies Rolle directly
 
+*Alternative name:* the ratio form $\frac{f(b)-f(a)}{g(b)-g(a)} = \frac{f'(c)}{g'(c)}$ (when $g(b) \neq g(a)$ and $g' \neq 0$) is also called the **Generalized Mean Value Theorem**; it is a direct rearrangement of the multiplicative statement above.
+
 ## Lean4 Proof
 
 ```lean4

@@ -51,6 +51,7 @@ Intuitively: crumple a piece of paper and lay it on a copy of itself — at leas
 - **[[Urysohn's Lemma]]** — separation of points is used in the homological proof to construct test functions distinguishing boundary from interior.
 - **[[Hausdorff Distance]]** — iterated approximation schemes for fixed points converge in the Hausdorff metric on compact sets.
 - **[[Iterated Function Systems]]** — IFS attractors are Banach fixed points in the Hausdorff metric space; Brouwer's theorem gives a topological (not metric) companion existence result.
+- **[[Banach Fixed Point Theorem]]** — the metric complement: Banach requires a *contraction* on a complete metric space and gives a unique fixed point with explicit rate-of-convergence; Brouwer requires only continuity on a compact convex set but gives no uniqueness or constructive approximation.
 
 ## Lean4 Proof
 

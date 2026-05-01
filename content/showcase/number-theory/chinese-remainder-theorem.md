@@ -63,7 +63,7 @@ Every pair $(\text{mod }2, \text{mod }3)$ appears exactly once — the isomorphi
 
 ## Connections
 
-CRT is the modular-arithmetic analogue of product decomposition. It generalises to any finite collection of pairwise coprime moduli. It is the basis for fast arithmetic in cryptography (RSA uses it for efficient decryption) and connects to [[Euler's Totient Function]] via the multiplicativity $\phi(mn) = \phi(m)\phi(n)$ for coprime $m,n$. The structure mirrors [[Bezout's Identity]] in action, and the coprimality assumption echoes the role of primes in the [[Fundamental Theorem of Arithmetic]].
+CRT is the modular-arithmetic analogue of product decomposition. It generalises to any finite collection of pairwise coprime moduli. It is the basis for fast arithmetic in cryptography (RSA uses it for efficient decryption) and connects to [[Euler's Totient Function]] via the multiplicativity $\phi(mn) = \phi(m)\phi(n)$ for coprime $m,n$. The structure mirrors [[Bezout's Identity]] in action, and the coprimality assumption echoes the role of primes in the [[Fundamental Theorem of Arithmetic]]. The ring-theoretic generalization — [[Chinese Remainder Theorem (Rings)]] — states that for a ring $R$ and pairwise coprime ideals $I_1, \ldots, I_k$, the natural map $R \to \prod_j R/I_j$ is surjective with kernel $\bigcap_j I_j$.
 
 ## Lean4 Proof
 

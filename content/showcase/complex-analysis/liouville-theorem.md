@@ -1,8 +1,8 @@
 +++
 title = "Liouville's Theorem"
 description = "A bounded entire function on ℂ must be constant — complex differentiability is far more rigid than real differentiability"
-weight = 40
-tags = ["lean4-proof", "analysis", "visualization"]
+weight = 90
+tags = ["lean4-proof", "complex-analysis", "visualization"]
 latex = "f : \\mathbb{C} \\to \\mathbb{C} \\text{ entire},\\; |f| \\leq C \\implies f \\equiv \\text{const}"
 prerequisites = []
 lean4_status = "complete"
