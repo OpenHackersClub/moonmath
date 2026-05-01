@@ -343,6 +343,7 @@ The home page serves as the entry point with:
 | **v0.1.7** | **SSG migration** — Replace SSR + hydration with static site generation. All pages pre-rendered at build time, no runtime server. Eliminates hydration mismatches. |
 | **v0.1.8** | **Lean4 in every showcase** — Add Lean4 proof snippets to all 10 existing showcase pages. Add `lean4_status` frontmatter field. Lean4 syntax highlighting in rendered HTML. |
 | **v0.1.9** | **Premier tag + card images** — Remove `difficulty` from frontmatter and UI. Introduce `premier` boolean. Add build-time card image generation (CDP screenshot of `/_card/...` route) and require non-text cards site-wide. |
+| **v0.1.10** | **SEO surface** — Per-page metadata (title, description, canonical, Open Graph, Twitter card, JSON-LD `TechArticle`), `sitemap.xml` and `robots.txt` emitted by SSG, default OG card. See [`specs/seo.md`](./seo.md). |
 | **v0.2** | egui canvas + Leptos↔egui bridge for interactive visualizations |
 | **v0.2.5** | **Cloudflare Worker deployment** — `wrangler.toml`, Workers Static Assets binding, GitHub Actions deploy pipeline, preview deploys per PR, optional Lean compile fallback route. |
 | **v0.2.6** | **Acceptance test suite (CDP)** — `crates/moonmath-acceptance` with chromiumoxide. Build-blocking checks for Lean4 compile, formula rendering, and animation/interaction smoke. Wired into CI. |
