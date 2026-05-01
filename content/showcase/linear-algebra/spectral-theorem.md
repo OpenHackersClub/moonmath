@@ -56,6 +56,7 @@ The key steps for real symmetric matrices are: (1) every symmetric operator on a
 - [[Determinant Multiplicativity]] — $\det(A) = \prod_i \lambda_i$; the product of diagonal entries of $\Lambda$.
 - [[Rank–Nullity Theorem]] — the number of zero eigenvalues equals the nullity of $A$.
 - [[Fundamental Theorem of Galois Theory]] — the eigenvalue decomposition is the linear algebra analogue of a splitting field decomposition.
+- [[Spectral Radius Formula]] — for bounded operators on a Banach space, the spectral radius $r(T) = \lim_{n\to\infty}\|T^n\|^{1/n}$ equals the supremum of $|\lambda|$ over all $\lambda$ in the spectrum; for Hermitian matrices this reduces to $r(A) = \|A\|_\text{op} = \max_i |\lambda_i|$.
 
 ## Lean4 Proof
 
