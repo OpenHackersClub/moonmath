@@ -152,6 +152,13 @@ pub struct ShowcaseDetailResponse {
     /// Raw Lean4 source code for each block (for client-side compilation)
     #[serde(default)]
     pub lean4_sources: Vec<String>,
+    /// Short summary used in `<meta name="description">` and JSON-LD.
+    #[serde(default)]
+    pub description: String,
+    /// Frontmatter `date` if present, else build day in `YYYY-MM-DD`.
+    /// Used for `datePublished` in JSON-LD and `<lastmod>` in sitemap.xml.
+    #[serde(default)]
+    pub date_published: String,
 }
 
 /// An entry in the concept index page.

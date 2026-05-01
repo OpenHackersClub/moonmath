@@ -226,3 +226,57 @@ async fn showcase_detail_loads_content_from_ssg() {
         "should not show file-read errors when SSG data exists"
     );
 }
+
+// ─── SEO surface (specs/seo.md) ─────────────────────────
+
+#[tokio::test]
+async fn homepage_emits_og_and_canonical_tags() {
+    let base = spawn_app().await;
+    let (_, html) = get(&base, "/").await;
+
+    assert!(
+        html.contains("rel=\"canonical\"") || html.contains("rel='canonical'"),
+        "homepage should emit a canonical link"
+    );
+    assert!(
+        html.contains("property=\"og:title\""),
+        "homepage should emit og:title"
+    );
+    assert!(
+        html.contains("property=\"og:image\""),
+        "homepage should emit og:image"
+    );
+    assert!(
+        html.contains("name=\"twitter:card\""),
+        "homepage should emit twitter:card"
+    );
+}
+
+#[tokio::test]
+async fn showcase_detail_emits_article_json_ld() {
+    let data_path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../target/ssg-data/showcase/number-theory/prime-theorem.json"
+    );
+    if !std::path::Path::new(data_path).exists() {
+        eprintln!("SKIP: SSG data not found — run `cargo run -p moonmath-ssg` first");
+        return;
+    }
+
+    let base = spawn_app().await;
+    let (_, html) = get(&base, "/showcase/number-theory/prime-theorem").await;
+
+    assert!(
+        html.contains("application/ld+json"),
+        "showcase detail should emit a JSON-LD script block"
+    );
+    assert!(
+        html.contains("\"@type\":\"TechArticle\"")
+            || html.contains("\"@type\": \"TechArticle\""),
+        "JSON-LD should declare TechArticle"
+    );
+    assert!(
+        html.contains("rel=\"canonical\"") || html.contains("rel='canonical'"),
+        "showcase detail should emit a canonical link"
+    );
+}

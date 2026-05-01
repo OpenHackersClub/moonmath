@@ -1,9 +1,9 @@
 use leptos::prelude::*;
-use leptos_meta::*;
 use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
 
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
+use crate::components::seo::PageMeta;
 use crate::fetch::json_resource;
 
 #[component]
@@ -31,14 +31,30 @@ pub fn ShowcaseCategoryPage() -> impl IntoView {
                 match pages.await {
                     Ok(page_list) => {
                         let cat = category_slug();
-                        let title = cats.iter()
-                            .find(|c| c.slug == cat)
+                        let cat_meta = cats.iter().find(|c| c.slug == cat).cloned();
+                        let title = cat_meta
+                            .as_ref()
                             .map(|c| c.title.clone())
                             .unwrap_or_else(|| cat.clone());
-                        let title_for_meta = title.clone();
+                        let description = cat_meta
+                            .as_ref()
+                            .map(|c| c.description.clone())
+                            .filter(|d| !d.is_empty())
+                            .unwrap_or_else(|| {
+                                format!(
+                                    "Showcase pages in {} on MoonMath — interactive proofs, formulas, and Lean4 code.",
+                                    title
+                                )
+                            });
                         let title_for_header = title.clone();
+                        let title_for_seo = title.clone();
+                        let path_for_seo = format!("/showcase/{}", cat);
                         view! {
-                            <Title text=format!("{} — MoonMath Showcase", title_for_meta)/>
+                            <PageMeta
+                                title=title_for_seo
+                                description=description
+                                path=path_for_seo
+                            />
                             <div class="showcase-category-page">
                                 <Breadcrumbs crumbs=vec![
                                     Crumb { label: "Home".into(), href: "/".into() },

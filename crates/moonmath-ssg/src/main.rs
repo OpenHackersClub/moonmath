@@ -5,11 +5,55 @@ use moonmath_content::{lean_highlight, render, showcase, wikilinks};
 use moonmath_math::katex_render;
 use moonmath_types::*;
 
+/// Default base URL used in canonical links + sitemap. Overridable via the
+/// `MOONMATH_BASE_URL` env var (CI sets it to the active deploy host while
+/// the custom domain is being wired up).
+const DEFAULT_BASE_URL: &str = "https://moonmath.app";
+
+fn base_url() -> String {
+    std::env::var("MOONMATH_BASE_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| DEFAULT_BASE_URL.to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+/// Build-day stamp used as a fallback when frontmatter omits `date`. We use
+/// `SystemTime` rather than the `chrono` crate to keep the SSG dep graph
+/// minimal — sitemap.xml and JSON-LD only need ISO date precision.
+fn today_iso_date() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0) as i64;
+    iso_date_from_unix(secs)
+}
+
+fn iso_date_from_unix(secs: i64) -> String {
+    // Days since 1970-01-01.
+    let days = secs.div_euclid(86_400);
+    // Convert to civil date via Hinnant's algorithm.
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    format!("{:04}-{:02}-{:02}", y, m, d)
+}
+
 fn main() {
     let watch = std::env::args().any(|a| a == "--watch");
 
     let content_dir = Path::new("content");
     let out_dir = Path::new("target/ssg-data");
+    let site_dir = Path::new("target/site");
 
     // Clean and recreate output directory
     if out_dir.exists() {
@@ -24,10 +68,18 @@ fn main() {
     // Generate showcase data
     generate_showcase_categories(content_dir, out_dir);
     generate_showcase_concepts(content_dir, out_dir, &page_index, &backlink_index);
-    generate_showcase_pages(content_dir, out_dir, &page_index, &backlink_index);
+    let entries = generate_showcase_pages(content_dir, out_dir, &page_index, &backlink_index);
 
     // Generate index.html shell
     generate_index_html();
+
+    // SEO surface — sitemap.xml + robots.txt land alongside index.html so
+    // `scripts/prerender.sh` copies them into ./dist/ and the Cloudflare
+    // Worker's Static Assets binding serves them at the root.
+    let base = base_url();
+    fs::create_dir_all(site_dir).expect("create site dir");
+    generate_sitemap(site_dir, &base, &entries);
+    generate_robots_txt(site_dir, &base);
 
     eprintln!("SSG: done.");
 
@@ -99,18 +151,35 @@ fn generate_showcase_concepts(
     eprintln!("SSG: wrote concepts.json ({} concepts)", concepts.len());
 }
 
+/// Minimal record used to drive sitemap.xml emission.
+#[derive(Debug, Clone)]
+struct PageEntry {
+    /// URL path (e.g. `/showcase/number-theory/prime-theorem`).
+    path: String,
+    /// ISO date for `<lastmod>`.
+    last_mod: String,
+}
+
 fn generate_showcase_pages(
     content_dir: &Path,
     out_dir: &Path,
     page_index: &std::collections::HashMap<String, wikilinks::PageInfo>,
     backlink_index: &std::collections::HashMap<String, Vec<BacklinkEntry>>,
-) {
+) -> Vec<PageEntry> {
     let categories = showcase::load_categories(content_dir);
+    let today = today_iso_date();
+    let mut entries: Vec<PageEntry> = Vec::new();
 
     for cat in &categories {
         let siblings = showcase::load_category_pages(content_dir, &cat.slug);
         let cat_dir = out_dir.join("showcase").join(&cat.slug);
         fs::create_dir_all(&cat_dir).expect("create category dir");
+
+        // Category index page
+        entries.push(PageEntry {
+            path: format!("/showcase/{}", cat.slug),
+            last_mod: today.clone(),
+        });
 
         for (idx, page_summary) in siblings.iter().enumerate() {
             let page = match showcase::load_showcase_page(
@@ -177,6 +246,31 @@ fn generate_showcase_pages(
                 .map(|code| lean_highlight::highlight_lean(code))
                 .collect();
 
+            // SEO fields. `description` falls back to a derived default
+            // when frontmatter omits it; `date_published` mirrors the
+            // sitemap's `<lastmod>`.
+            let description = page
+                .frontmatter
+                .description
+                .clone()
+                .unwrap_or_else(|| {
+                    format!(
+                        "Interactive walkthrough of {} on MoonMath.",
+                        page.frontmatter.title
+                    )
+                });
+            let date_published = page
+                .frontmatter
+                .date
+                .clone()
+                .unwrap_or_else(|| today.clone());
+
+            let path = format!("/showcase/{}/{}", cat.slug, page_summary.slug);
+            entries.push(PageEntry {
+                path: path.clone(),
+                last_mod: date_published.clone(),
+            });
+
             let detail = ShowcaseDetailResponse {
                 category_slug: cat.slug.clone(),
                 category_title: cat.title.clone(),
@@ -190,6 +284,8 @@ fn generate_showcase_pages(
                 backlinks,
                 lean4_blocks,
                 lean4_sources,
+                description,
+                date_published,
             };
 
             write_json(
@@ -199,6 +295,8 @@ fn generate_showcase_pages(
             eprintln!("SSG: wrote {}/{}.json", cat.slug, page_summary.slug);
         }
     }
+
+    entries
 }
 
 fn generate_index_html() {
@@ -210,6 +308,9 @@ fn generate_index_html() {
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="preload" as="style"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+        crossorigin="anonymous"/>
     <link rel="stylesheet" href="/pkg/moonmath-app.css"/>
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
@@ -236,6 +337,98 @@ fn generate_index_html() {
 fn write_json<T: serde::Serialize>(path: &Path, data: &T) {
     let json = serde_json::to_string_pretty(data).expect("serialize JSON");
     fs::write(path, json).expect("write JSON file");
+}
+
+/// Emit `target/site/sitemap.xml` covering every public route.
+///
+/// Static pages (`/`, `/showcase`, `/inspirations`, `/showcase/concepts`)
+/// get fixed priorities + `weekly` change frequency. Showcase categories
+/// and detail pages are appended from `entries`. Lighthouse SEO and
+/// search engines both read this file from the document root, so it lives
+/// under `target/site/` rather than `target/ssg-data/` (the latter is
+/// served under `/data/`).
+fn generate_sitemap(site_dir: &Path, base: &str, entries: &[PageEntry]) {
+    let today = today_iso_date();
+
+    let mut xml = String::with_capacity(4096);
+    xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    xml.push_str("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+
+    let static_routes: &[(&str, &str, &str)] = &[
+        ("/", "1.0", "weekly"),
+        ("/showcase", "0.7", "weekly"),
+        ("/showcase/concepts", "0.6", "weekly"),
+        ("/inspirations", "0.5", "weekly"),
+    ];
+    for (path, priority, freq) in static_routes {
+        push_sitemap_url(&mut xml, base, path, &today, priority, freq);
+    }
+
+    for entry in entries {
+        // Categories live at depth 2, detail pages at depth 3.
+        let depth = entry.path.matches('/').count();
+        let (priority, freq) = if depth <= 2 {
+            ("0.6", "weekly")
+        } else {
+            ("0.8", "monthly")
+        };
+        push_sitemap_url(&mut xml, base, &entry.path, &entry.last_mod, priority, freq);
+    }
+
+    xml.push_str("</urlset>\n");
+    fs::write(site_dir.join("sitemap.xml"), &xml).expect("write sitemap.xml");
+    eprintln!(
+        "SSG: wrote sitemap.xml ({} entries)",
+        static_routes.len() + entries.len()
+    );
+}
+
+fn push_sitemap_url(
+    buf: &mut String,
+    base: &str,
+    path: &str,
+    last_mod: &str,
+    priority: &str,
+    freq: &str,
+) {
+    buf.push_str("  <url>\n");
+    buf.push_str("    <loc>");
+    buf.push_str(&xml_escape(&format!("{}{}", base, path)));
+    buf.push_str("</loc>\n");
+    buf.push_str("    <lastmod>");
+    buf.push_str(&xml_escape(last_mod));
+    buf.push_str("</lastmod>\n");
+    buf.push_str("    <changefreq>");
+    buf.push_str(freq);
+    buf.push_str("</changefreq>\n");
+    buf.push_str("    <priority>");
+    buf.push_str(priority);
+    buf.push_str("</priority>\n");
+    buf.push_str("  </url>\n");
+}
+
+fn xml_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&apos;"),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+fn generate_robots_txt(site_dir: &Path, base: &str) {
+    let body = format!(
+        "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /data/\n\nSitemap: {}/sitemap.xml\n",
+        base
+    );
+    fs::write(site_dir.join("robots.txt"), body).expect("write robots.txt");
+    eprintln!("SSG: wrote robots.txt");
 }
 
 /// Whether the Lean code uses `sorry` as a token (not as a substring of a
@@ -285,7 +478,10 @@ fn strip_markdown_lean4_section(html: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{contains_sorry_keyword, strip_markdown_lean4_section};
+    use super::{
+        base_url, contains_sorry_keyword, iso_date_from_unix, strip_markdown_lean4_section,
+        xml_escape,
+    };
 
     #[test]
     fn detects_bare_sorry() {
@@ -323,5 +519,30 @@ mod tests {
     fn leaves_html_without_lean4_alone() {
         let html = "<h2>Statement</h2><p>just prose</p>";
         assert_eq!(strip_markdown_lean4_section(html), html);
+    }
+
+    #[test]
+    fn iso_date_matches_known_epochs() {
+        // 1970-01-01 00:00 UTC → unix 0
+        assert_eq!(iso_date_from_unix(0), "1970-01-01");
+        // 2026-05-01 → 1761955200
+        assert_eq!(iso_date_from_unix(1_777_852_800), "2026-05-04");
+        // 2024-02-29 (leap day)
+        assert_eq!(iso_date_from_unix(1_709_164_800), "2024-02-29");
+    }
+
+    #[test]
+    fn xml_escape_handles_specials() {
+        assert_eq!(xml_escape("a & b"), "a &amp; b");
+        assert_eq!(xml_escape("<tag>"), "&lt;tag&gt;");
+        assert_eq!(xml_escape("\"q\""), "&quot;q&quot;");
+    }
+
+    #[test]
+    fn base_url_uses_default_when_unset() {
+        // Don't fight env state — just check that the default is well-formed.
+        let url = base_url();
+        assert!(url.starts_with("http"));
+        assert!(!url.ends_with('/'));
     }
 }

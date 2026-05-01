@@ -5,3 +5,4 @@ pub mod ifs_canvas;
 pub mod lean_code_block;
 pub mod math_display;
 pub mod proof_viz;
+pub mod seo;

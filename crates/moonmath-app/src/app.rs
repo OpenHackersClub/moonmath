@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use leptos_meta::*;
 use leptos_router::components::{FlatRoutes, Route, Router, A};
-use leptos_router::{StaticSegment, ParamSegment};
+use leptos_router::{StaticSegment, ParamSegment, SsrMode};
 
 use crate::pages::concepts::ConceptsIndexPage;
 use crate::pages::home::HomePage;
@@ -22,6 +22,14 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <AutoReload options=options.clone() />
                 <HydrationScripts options/>
+                // Start the KaTeX stylesheet download earlier so first-paint
+                // pre-rendered math is unstyled for as little time as
+                // possible (CWV: reduce CLS). `as` is a Rust keyword;
+                // the raw-string literal lets us emit the bare HTML
+                // attribute `as="style"` without macro fights.
+                <link rel="preload" r#as="style"
+                    href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+                    crossorigin="anonymous"/>
                 <link rel="stylesheet" id="leptos" href="/pkg/moonmath-app.css"/>
                 <link rel="stylesheet"
                     href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
@@ -54,11 +62,17 @@ pub fn App() -> impl IntoView {
                         <A href="/" attr:class="feature-link">"Go home"</A>
                     </div>
                 }>
-                    <Route path=StaticSegment("") view=HomePage/>
-                    <Route path=StaticSegment("inspirations") view=InspirationsPage/>
+                    // SsrMode::Async lets per-page meta tags (canonical, og:*,
+                    // JSON-LD) render inside the Suspense block while still
+                    // landing inside `<head>` — leptos_meta needs the full
+                    // resource to resolve before flushing the head, which
+                    // OutOfOrder streaming (the default) doesn't allow.
+                    <Route path=StaticSegment("") view=HomePage ssr=SsrMode::Async/>
+                    <Route path=StaticSegment("inspirations") view=InspirationsPage ssr=SsrMode::Async/>
                     <Route
                         path=StaticSegment("showcase")
                         view=ShowcaseIndexPage
+                        ssr=SsrMode::Async
                     />
                     // Static `/showcase/concepts` must precede the
                     // `(showcase, :category)` dynamic match so the index page
@@ -66,14 +80,17 @@ pub fn App() -> impl IntoView {
                     <Route
                         path=(StaticSegment("showcase"), StaticSegment("concepts"))
                         view=ConceptsIndexPage
+                        ssr=SsrMode::Async
                     />
                     <Route
                         path=(StaticSegment("showcase"), ParamSegment("category"))
                         view=ShowcaseCategoryPage
+                        ssr=SsrMode::Async
                     />
                     <Route
                         path=(StaticSegment("showcase"), ParamSegment("category"), ParamSegment("slug"))
                         view=ShowcaseDetailPage
+                        ssr=SsrMode::Async
                     />
                     // Legacy: keep /showcase-legacy/prime-theorem working
                     <Route
