@@ -30,6 +30,10 @@ concurrency:
 permissions:
   contents: read
   pull-requests: write
+  # Required by google-github-actions/auth@v2 when using Workload Identity
+  # Federation for the Search Console post-deploy step. Harmless when the
+  # WIF vars are unset (the auth step is gated behind them).
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -75,6 +79,22 @@ jobs:
           test -d dist/pkg
           test -d dist/data
           echo "pages: $(find dist -name index.html | wc -l)"
+
+      # IndexNow key file. Must live at the site root so api.indexnow.org can
+      # fetch <host>/<key>.txt and confirm the caller controls the host. The
+      # contents are the key itself. The shell-level `[ -n ... ]` guard is
+      # what gates execution — a step-level `if: env.INDEXNOW_KEY != ''` does
+      # NOT work because step `env` is not visible to the step's own `if`.
+      - name: Write IndexNow key file
+        env:
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: |
+          if [ -z "${INDEXNOW_KEY:-}" ]; then
+            echo "INDEXNOW_KEY secret not set — skipping IndexNow key file"
+            exit 0
+          fi
+          printf '%s' "$INDEXNOW_KEY" > "dist/${INDEXNOW_KEY}.txt"
+          echo "wrote dist/<INDEXNOW_KEY>.txt ($(wc -c < "dist/${INDEXNOW_KEY}.txt") bytes)"
 
       - name: Install Worker dependencies
         working-directory: worker
@@ -161,6 +181,40 @@ jobs:
         env:
           BASE_URL: ${{ steps.deployed_url.outputs.url }}
         run: ./scripts/acceptance.sh "$BASE_URL"
+
+      # ─── Search Console + IndexNow post-deploy ──────────────────────────
+      # Production only. Gated behind `vars.GCP_WIF_PROVIDER` so the rest of
+      # CI keeps working until the WIF setup lands (see scripts/seo/README.md).
+      # Runs AFTER acceptance — we don't want to advertise a broken deploy.
+
+      - name: Auth to GCP for Search Console
+        id: gcp_auth
+        if: steps.target.outputs.kind == 'production' && steps.target.outputs.creds == 'true' && vars.GCP_WIF_PROVIDER != '' && vars.GCP_SEARCH_CONSOLE_SA != ''
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SEARCH_CONSOLE_SA }}
+
+      - name: Set up Node for SEO scripts
+        if: steps.gcp_auth.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/seo/package-lock.json
+
+      - name: Install SEO script deps
+        if: steps.gcp_auth.outcome == 'success'
+        working-directory: scripts/seo
+        run: npm ci --no-audit --no-fund
+
+      - name: Search Console + IndexNow post-deploy
+        if: steps.gcp_auth.outcome == 'success'
+        working-directory: scripts/seo
+        env:
+          SITE_URL: ${{ steps.deployed_url.outputs.url }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: npm run post-deploy
 
       - name: Comment preview URL on PR
         if: steps.target.outputs.kind == 'preview' && steps.target.outputs.creds == 'true' && github.event_name == 'pull_request'
