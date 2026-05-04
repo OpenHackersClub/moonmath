@@ -25,7 +25,7 @@ All pages output the following inside `<head>`. Concrete values are derived from
 | `<title>` | `frontmatter.title` + " — MoonMath" | Already present on most pages; standardize the suffix. |
 | `<meta name="description">` | `frontmatter.description` | Falls back to a category- or site-level default if missing. |
 | `<meta name="viewport">` | static | `width=device-width, initial-scale=1`. |
-| `<link rel="canonical">` | `{base_url}{route}` | `base_url` = `https://moonmath.app` (TODO: confirm custom domain — until then the worker's `*.workers.dev` subdomain works because the host is rewritten by the `MOONMATH_BASE_URL` env override read by SSG). |
+| `<link rel="canonical">` | `{base_url}{route}` | `base_url` = `https://moonmath.openhackers.club` (production custom domain wired in `wrangler.toml`). Override via the `MOONMATH_BASE_URL` env var when SSG runs against a different host (e.g. PR previews on `*.workers.dev`). |
 | `<meta property="og:title">` | same as `<title>` minus suffix | |
 | `<meta property="og:description">` | same as `meta description` | |
 | `<meta property="og:type">` | `article` for showcase detail; `website` for home / index pages | |
@@ -81,7 +81,7 @@ Contents:
 
 Each entry includes `<lastmod>` from frontmatter `date` (when present) or build time (`%Y-%m-%d`) otherwise.
 
-The base URL is read from `MOONMATH_BASE_URL` (env), defaulting to `https://moonmath.app`. CI sets the value when the custom domain ships.
+The base URL is read from `MOONMATH_BASE_URL` (env), defaulting to `https://moonmath.openhackers.club` (the production custom domain wired in `wrangler.toml`). CI overrides the value for PR previews so canonical URLs point at the active `*.workers.dev` host.
 
 ## 3. robots.txt
 
@@ -156,7 +156,7 @@ A future follow-up will fold these into the CDP acceptance suite (`crates/moonma
 ## 8. Out-of-scope (recorded as TODO)
 
 - **Per-category OG cards** — generated at build time by reusing the `<ShowcaseCard>` headless-Chrome path from `specs/prd.md → Card Images`. Awaits the v0.1.9 card pipeline.
-- **Custom domain** — sitemap and canonical URLs reference `https://moonmath.app` (configurable via `MOONMATH_BASE_URL`). Until that DNS lands, set the env to the active `*.workers.dev` URL in CI.
+- **Custom domain** — sitemap and canonical URLs reference `https://moonmath.openhackers.club` (configurable via `MOONMATH_BASE_URL`). PR previews override the env to the active `*.workers.dev` URL in CI.
 - **i18n** — single-locale (`en`) for the foreseeable future.
 - **`MathSolver` JSON-LD type** — `TechArticle` covers the v1 case; revisit when individual theorems gain solver UIs.
 - **CDP acceptance gating** — see milestone v0.2.6.
