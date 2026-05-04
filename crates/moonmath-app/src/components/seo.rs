@@ -17,11 +17,10 @@
 use leptos::prelude::*;
 use leptos_meta::{Link, Meta, Title};
 
-/// Production hostname. Spec calls out the env override; until a custom
-/// domain is wired up the worker's `*.workers.dev` URL still resolves to
-/// the same canonicals via the deploy pipeline. Keep in sync with
-/// `moonmath-ssg`'s default.
-pub const SITE_BASE_URL: &str = "https://moonmath.app";
+/// Production hostname. Keep in sync with `moonmath-ssg`'s
+/// `DEFAULT_BASE_URL` — the SSG-emitted sitemap.xml and the
+/// runtime-rendered canonical / og:url tags must agree.
+pub const SITE_BASE_URL: &str = "https://moonmath.openhackers.club";
 pub const SITE_NAME: &str = "MoonMath";
 pub const DEFAULT_OG_IMAGE: &str = "/og-default.svg";
 
@@ -214,8 +213,8 @@ mod tests {
         let payload = build_article_json_ld(
             "Infinitude of Primes",
             "Euclid's proof",
-            "https://moonmath.app/showcase/number-theory/prime-theorem",
-            "https://moonmath.app/og-default.svg",
+            "https://moonmath.openhackers.club/showcase/number-theory/prime-theorem",
+            "https://moonmath.openhackers.club/og-default.svg",
             "2026-05-01",
             "lean4-proof, number-theory",
         );
@@ -231,8 +230,8 @@ mod tests {
         let payload = build_article_json_ld(
             "He said \"hi\"",
             "ends with </script>",
-            "https://moonmath.app/x",
-            "https://moonmath.app/og-default.svg",
+            "https://moonmath.openhackers.club/x",
+            "https://moonmath.openhackers.club/og-default.svg",
             "2026-05-01",
             "",
         );
@@ -246,12 +245,12 @@ mod tests {
     fn absolute_handles_paths_and_full_urls() {
         assert_eq!(
             absolute("/showcase"),
-            "https://moonmath.app/showcase"
+            "https://moonmath.openhackers.club/showcase"
         );
         assert_eq!(
             absolute("https://example.com/x"),
             "https://example.com/x"
         );
-        assert_eq!(absolute("relative"), "https://moonmath.app/relative");
+        assert_eq!(absolute("relative"), "https://moonmath.openhackers.club/relative");
     }
 }
