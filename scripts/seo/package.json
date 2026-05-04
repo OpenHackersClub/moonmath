@@ -1,0 +1,21 @@
+{
+  "name": "moonmath-seo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Google Search Console + IndexNow automation for the production deploy.",
+  "type": "module",
+  "scripts": {
+    "verify-property": "tsx src/verify-property.ts",
+    "post-deploy": "tsx src/post-deploy.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.14.0",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.4.5"
+  }
+}
