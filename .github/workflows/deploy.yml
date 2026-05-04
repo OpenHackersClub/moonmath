@@ -82,15 +82,19 @@ jobs:
 
       # IndexNow key file. Must live at the site root so api.indexnow.org can
       # fetch <host>/<key>.txt and confirm the caller controls the host. The
-      # contents are the key itself. Skipped when the secret isn't configured
-      # — the post-deploy script no-ops in that case too.
+      # contents are the key itself. The shell-level `[ -n ... ]` guard is
+      # what gates execution — a step-level `if: env.INDEXNOW_KEY != ''` does
+      # NOT work because step `env` is not visible to the step's own `if`.
       - name: Write IndexNow key file
-        if: env.INDEXNOW_KEY != ''
         env:
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: |
+          if [ -z "${INDEXNOW_KEY:-}" ]; then
+            echo "INDEXNOW_KEY secret not set — skipping IndexNow key file"
+            exit 0
+          fi
           printf '%s' "$INDEXNOW_KEY" > "dist/${INDEXNOW_KEY}.txt"
-          echo "wrote dist/${INDEXNOW_KEY}.txt ($(wc -c < "dist/${INDEXNOW_KEY}.txt") bytes)"
+          echo "wrote dist/<INDEXNOW_KEY>.txt ($(wc -c < "dist/${INDEXNOW_KEY}.txt") bytes)"
 
       - name: Install Worker dependencies
         working-directory: worker
@@ -185,7 +189,7 @@ jobs:
 
       - name: Auth to GCP for Search Console
         id: gcp_auth
-        if: steps.target.outputs.kind == 'production' && steps.target.outputs.creds == 'true' && vars.GCP_WIF_PROVIDER != ''
+        if: steps.target.outputs.kind == 'production' && steps.target.outputs.creds == 'true' && vars.GCP_WIF_PROVIDER != '' && vars.GCP_SEARCH_CONSOLE_SA != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
