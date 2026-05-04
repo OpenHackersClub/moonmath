@@ -2,7 +2,7 @@
 
 Interactive, animated explanations of mathematical formulas, algorithm visualizations, and machine-checked Lean4 proofs — built in Rust, compiled to WebAssembly, served from a single Cloudflare Worker.
 
-**Live:** https://moonmath.debuggingfuturecors.workers.dev
+**Live:** https://moonmath.openhackers.club
 
 ## What it is
 

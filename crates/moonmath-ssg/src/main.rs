@@ -8,7 +8,7 @@ use moonmath_types::*;
 /// Default base URL used in canonical links + sitemap. Overridable via the
 /// `MOONMATH_BASE_URL` env var (CI sets it to the active deploy host while
 /// the custom domain is being wired up).
-const DEFAULT_BASE_URL: &str = "https://moonmath.app";
+const DEFAULT_BASE_URL: &str = "https://moonmath.openhackers.club";
 
 fn base_url() -> String {
     std::env::var("MOONMATH_BASE_URL")

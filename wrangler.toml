@@ -13,7 +13,8 @@
 #      to forward to a managed Lean service. Without it the route returns 503.
 #   4) `cargo run -p moonmath-ssg && cargo leptos build --release && \
 #       scripts/prerender.sh` to populate ./dist.
-#   5) `wrangler deploy` to push to the `moonmath` Worker on workers.dev.
+#   5) `wrangler deploy` to push to the `moonmath` Worker; the route below
+#      attaches it to https://moonmath.openhackers.club.
 #
 
 name = "moonmath"
@@ -111,10 +112,12 @@ enabled = true
 # ─── Deploy targets ──────────────────────────────────────────────────────────
 #
 # Default `wrangler deploy` pushes to the top-level `name = "moonmath"` Worker
-# on workers.dev. Per-PR previews come from CI passing
+# and attaches the `moonmath.openhackers.club` custom route below. Per-PR
+# previews come from CI passing
 #   `wrangler deploy --name moonmath-preview-pr-<n>`
 # from .github/workflows/deploy.yml — `--name` clones the full top-level config
-# (including the LEAN_COMPILER container binding) into a fresh Worker.
+# (including the LEAN_COMPILER container binding) into a fresh Worker that
+# stays on its own `*.workers.dev` host (no custom route).
 #
 # Named environments (`[env.staging]`, `[env.production]`) were removed because
 # wrangler does NOT inherit top-level bindings into named envs — duplicating
@@ -123,6 +126,11 @@ enabled = true
 # remembering to repeat the `[[durable_objects.bindings]]`, `[[migrations]]`,
 # and `[[containers]]` blocks under each env.
 
-# routes = [
-#   { pattern = "moonmath.dev/*", zone_name = "moonmath.dev" },
-# ]
+# Production custom domain. The `openhackers.club` zone must already exist in
+# this Cloudflare account; CI's CLOUDFLARE_API_TOKEN needs Zone:Read +
+# Workers Routes:Edit on it. The pattern includes `/*` so the Worker handles
+# every path (Workers Static Assets serves dist/, the Worker code handles
+# /api/*). PR previews skip this block via `wrangler deploy --name ...`.
+routes = [
+  { pattern = "moonmath.openhackers.club/*", zone_name = "openhackers.club" },
+]

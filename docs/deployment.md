@@ -41,7 +41,7 @@ The script will be deleted once v0.1.7 lands.
 3. **Worker deps.** `cd worker && npm install`
 4. **(Optional) Rate-limit KV.** `npx wrangler kv namespace create LEAN_RATE_LIMIT` and paste the printed `id` / `preview_id` into `wrangler.toml` (uncomment the `[[kv_namespaces]]` block).
 5. **(Optional) Compile-cache KV.** `npx wrangler kv namespace create LEAN_CACHE` and `... --preview`; paste both ids into the `LEAN_CACHE` block in `wrangler.toml`. Without it `/api/CompileLean` still works but every request hits the container.
-6. **(Optional) Custom domain.** Uncomment the `routes = [...]` line under `[env.production]` in `wrangler.toml` once the zone is set up. Until then deploys land on the `*.workers.dev` subdomain.
+6. **Custom domain (production).** `wrangler.toml` attaches the production Worker to `https://moonmath.openhackers.club` via the top-level `routes = [...]` block. The `openhackers.club` zone must already exist in this Cloudflare account, and `CLOUDFLARE_API_TOKEN` needs `Zone:Read` + `Workers Routes:Edit` on it. PR previews skip this and stay on `*.workers.dev` (CI passes `--name moonmath-preview-pr-<n>` which clones the config without the route).
 
 The `LeanCompiler` Durable Object + container image are provisioned automatically by `wrangler deploy` — no separate registry push.
 
@@ -59,7 +59,7 @@ cargo leptos build --release
 cd worker && npm run dev
 
 # 4. Deploy.
-cd worker && npm run deploy            # → moonmath.<account>.workers.dev
+cd worker && npm run deploy            # → https://moonmath.openhackers.club
 ```
 
 ## CI/CD
