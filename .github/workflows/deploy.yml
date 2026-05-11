@@ -216,6 +216,118 @@ jobs:
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
         run: npm run post-deploy
 
+      # ─── Lighthouse audit ────────────────────────────────────────────────
+      # Runs after acceptance + Search Console so we don't audit a known-bad
+      # deploy. Mobile preset (Lighthouse default). Thresholds live in
+      # lighthouserc.json — performance is warn-only initially because SSR +
+      # WASM hydration variance can spike LCP on shared CI runners.
+
+      - name: Setup Node for Lighthouse
+        if: steps.target.outputs.creds == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Lighthouse audit
+        id: lighthouse
+        if: steps.target.outputs.creds == 'true'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.deployed_url.outputs.url }}/
+            ${{ steps.deployed_url.outputs.url }}/showcase
+            ${{ steps.deployed_url.outputs.url }}/showcase/number-theory/prime-theorem
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: false
+
+      # Re-upload .lighthouseci with the documented artifact name. The
+      # built-in upload from lighthouse-ci-action also uploads as
+      # `lighthouse-results`; this step adds a stable `lighthouse-report`
+      # artifact name that the PR-comment workflow advertises.
+      # Stage reports under a non-dotfile directory because upload-artifact's
+      # glob expansion skips dotfiles like .lighthouseci/ by default.
+      - name: Stage Lighthouse reports for upload
+        if: steps.target.outputs.creds == 'true' && always() && steps.lighthouse.outcome == 'success'
+        run: |
+          if [ -d .lighthouseci ]; then
+            mkdir -p lighthouse-report
+            cp -R .lighthouseci/. lighthouse-report/
+            ls -la lighthouse-report/
+          else
+            echo "::warning::.lighthouseci directory not found; nothing to upload"
+          fi
+
+      - name: Upload Lighthouse report artifact
+        if: steps.target.outputs.creds == 'true' && always() && steps.lighthouse.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Comment Lighthouse scores on PR
+        if: steps.target.outputs.kind == 'preview' && steps.target.outputs.creds == 'true' && github.event_name == 'pull_request' && always() && steps.lighthouse.outcome != 'skipped'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const dir = '.lighthouseci';
+            const prefix = '<!-- moonmath-lighthouse -->';
+            let body = `${prefix}\n## Lighthouse audit\n\n`;
+
+            let manifest = [];
+            try {
+              const manifestPath = path.join(dir, 'manifest.json');
+              manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            } catch (err) {
+              body += `_Could not read Lighthouse manifest: ${err.message}_\n`;
+            }
+
+            if (manifest.length) {
+              body += '| URL | Performance | Accessibility | Best Practices | SEO |\n';
+              body += '|---|---|---|---|---|\n';
+              const fmt = (n) => (n == null ? 'n/a' : Math.round(n * 100));
+              const seen = new Set();
+              for (const entry of manifest) {
+                if (entry.isRepresentativeRun === false) continue;
+                if (seen.has(entry.url)) continue;
+                seen.add(entry.url);
+                try {
+                  const lhr = JSON.parse(fs.readFileSync(entry.jsonPath, 'utf8'));
+                  const c = lhr.categories || {};
+                  body += `| ${entry.url} | ${fmt(c.performance?.score)} | ${fmt(c.accessibility?.score)} | ${fmt(c['best-practices']?.score)} | ${fmt(c.seo?.score)} |\n`;
+                } catch (err) {
+                  body += `| ${entry.url} | error | error | error | error |\n`;
+                }
+              }
+              body += '\n_Scores are 0–100. Mobile preset, 1 run. Thresholds: a11y/best-practices/SEO must be ≥ 90 (errors); perf ≥ 80 (warn-only)._';
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.startsWith(prefix));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
       - name: Comment preview URL on PR
         if: steps.target.outputs.kind == 'preview' && steps.target.outputs.creds == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
