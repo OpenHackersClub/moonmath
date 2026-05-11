@@ -62,11 +62,16 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Generate SSG data
-        run: cargo run -p moonmath-ssg
-
+      # `cargo leptos build` cleans and rewrites `target/site/`, so the SSG
+      # step (which writes sitemap.xml + robots.txt into target/site/ for
+      # prerender.sh to copy) MUST run AFTER the leptos build. Reversing this
+      # order silently drops both files from dist/ and the deployed Worker
+      # serves the SPA 404 fallback for /sitemap.xml.
       - name: Build release (cargo leptos)
         run: cargo leptos build --release
+
+      - name: Generate SSG data
+        run: cargo run -p moonmath-ssg
 
       - name: Prerender routes to dist/
         run: ./scripts/prerender.sh
@@ -76,9 +81,14 @@ jobs:
           set -e
           test -f dist/index.html
           test -f dist/showcase/index.html
+          test -f dist/sitemap.xml
+          test -f dist/robots.txt
           test -d dist/pkg
           test -d dist/data
+          grep -q '<urlset' dist/sitemap.xml
+          grep -q '^Sitemap:' dist/robots.txt
           echo "pages: $(find dist -name index.html | wc -l)"
+          echo "sitemap entries: $(grep -c '<loc>' dist/sitemap.xml)"
 
       # IndexNow key file. Must live at the site root so api.indexnow.org can
       # fetch <host>/<key>.txt and confirm the caller controls the host. The
