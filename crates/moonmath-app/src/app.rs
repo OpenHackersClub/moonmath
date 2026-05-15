@@ -35,6 +35,8 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
                     integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+"
                     crossorigin="anonymous"/>
+                <script async src="https://www.googletagmanager.com/gtag/js?id=G-LF338FNV57"></script>
+                <script inner_html="window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-LF338FNV57');"></script>
                 <MetaTags/>
             </head>
             <body>
