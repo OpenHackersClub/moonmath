@@ -26,11 +26,20 @@ pub const DEFAULT_OG_IMAGE: &str = "/og-default.svg";
 
 fn absolute(path: &str) -> String {
     if path.starts_with("http://") || path.starts_with("https://") {
-        path.to_string()
-    } else if path.starts_with('/') {
+        return path.to_string();
+    }
+    let base = if path.starts_with('/') {
         format!("{}{}", SITE_BASE_URL, path)
     } else {
         format!("{}/{}", SITE_BASE_URL, path)
+    };
+    // Cloudflare Workers html_handling = "auto-trailing-slash" 307-redirects
+    // non-slash URLs to their trailing-slash form. Canonical URLs must point
+    // to the final (post-redirect) URL to avoid confusing crawlers.
+    if base.ends_with('/') {
+        base
+    } else {
+        format!("{}/", base)
     }
 }
 
@@ -242,15 +251,31 @@ mod tests {
     }
 
     #[test]
-    fn absolute_handles_paths_and_full_urls() {
+    fn absolute_appends_trailing_slash_for_paths() {
         assert_eq!(
             absolute("/showcase"),
-            "https://moonmath.openhackers.club/showcase"
+            "https://moonmath.openhackers.club/showcase/"
         );
+        assert_eq!(
+            absolute("/"),
+            "https://moonmath.openhackers.club/"
+        );
+        assert_eq!(
+            absolute("/showcase/number-theory/prime-theorem"),
+            "https://moonmath.openhackers.club/showcase/number-theory/prime-theorem/"
+        );
+    }
+
+    #[test]
+    fn absolute_preserves_full_urls() {
         assert_eq!(
             absolute("https://example.com/x"),
             "https://example.com/x"
         );
-        assert_eq!(absolute("relative"), "https://moonmath.openhackers.club/relative");
+    }
+
+    #[test]
+    fn absolute_handles_relative_paths() {
+        assert_eq!(absolute("relative"), "https://moonmath.openhackers.club/relative/");
     }
 }

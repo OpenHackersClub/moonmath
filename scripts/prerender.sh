@@ -131,17 +131,33 @@ mkdir -p "$DIST_DIR/data"
 cp -R "$SSG_DATA_DIR/." "$DIST_DIR/data/"
 
 # Public assets bundled by cargo-leptos (favicon, etc.) live alongside pkg/ in
-# target/site — copy anything there that isn't pkg/.
+# target/site — copy anything there that isn't pkg/ or index.html. The pkg/
+# directory is already copied above; index.html is the SSG-generated static
+# shell which must NOT overwrite the prerendered SSR output in dist/index.html
+# (the shell has no body content and is invisible to search engines).
 if [[ -d target/site ]]; then
   while IFS= read -r -d '' entry; do
     name=$(basename "$entry")
     [[ "$name" == "pkg" ]] && continue
+    [[ "$name" == "index.html" ]] && continue
     cp -R "$entry" "$DIST_DIR/"
   done < <(find target/site -mindepth 1 -maxdepth 1 -print0)
 fi
 
 if (( failed > 0 )); then
   die "$failed route(s) failed to render"
+fi
+
+# ─── SSR content sanity check ───────────────────────────────────────────────
+# Guard against the homepage being an empty JS shell (no body content).
+# Googlebot cannot execute WASM — if the homepage has no <h1>, the entire
+# site is effectively invisible to search engines.
+
+if ! grep -q '<h1>' "$DIST_DIR/index.html"; then
+  die "dist/index.html has no <h1> tag — SSR prerender produced a blank JS shell. This breaks SEO."
+fi
+if ! grep -q '<nav' "$DIST_DIR/index.html"; then
+  die "dist/index.html has no <nav> — SSR prerender is missing rendered content."
 fi
 
 log "wrote $DIST_DIR/ — ready for 'wrangler deploy'"

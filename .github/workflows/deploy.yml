@@ -87,6 +87,11 @@ jobs:
           test -d dist/data
           grep -q '<urlset' dist/sitemap.xml
           grep -q '^Sitemap:' dist/robots.txt
+          # Homepage must have SSR content — not an empty JS shell.
+          # Google cannot execute WASM; a blank body means zero indexable content.
+          grep -q '<h1>' dist/index.html || { echo "FAIL: dist/index.html has no <h1> — blank JS shell detected"; exit 1; }
+          grep -q '<nav' dist/index.html || { echo "FAIL: dist/index.html has no <nav> — missing SSR content"; exit 1; }
+          grep -q '<meta name="description"' dist/index.html || { echo "FAIL: dist/index.html has no meta description"; exit 1; }
           echo "pages: $(find dist -name index.html | wc -l)"
           echo "sitemap entries: $(grep -c '<loc>' dist/sitemap.xml)"
 
