@@ -116,6 +116,44 @@ for route in "${routes[@]}"; do
   log "  ok   $route"
 done
 
+# ─── SSR content assertions ────────────────────────────────────────────────
+# Verify that pages serve pre-rendered HTML visible to search engines, not
+# just an empty JS shell. Google cannot execute WASM, so the body must
+# contain semantic content at the HTML level.
+
+log "checking homepage has SSR content"
+homepage_code=$(retry_get "${BASE_URL}/" "$tmp_body")
+if [[ "$homepage_code" != "200" ]]; then
+  log "  FAIL homepage SSR check → HTTP $homepage_code"
+  failed=$((failed + 1))
+elif ! grep -q '<h1>' "$tmp_body"; then
+  log "  FAIL homepage SSR check → no <h1> found (page is a blank JS shell)"
+  failed=$((failed + 1))
+elif ! grep -q '<nav' "$tmp_body"; then
+  log "  FAIL homepage SSR check → no <nav> found (missing SSR navigation)"
+  failed=$((failed + 1))
+elif ! grep -q '<meta name="description"' "$tmp_body"; then
+  log "  FAIL homepage SSR check → no meta description (invisible to search engines)"
+  failed=$((failed + 1))
+else
+  log "  ok   homepage SSR content"
+fi
+
+log "checking showcase index has SSR content"
+showcase_code=$(retry_get "${BASE_URL}/showcase" "$tmp_body")
+if [[ "$showcase_code" != "200" ]]; then
+  log "  FAIL showcase SSR check → HTTP $showcase_code"
+  failed=$((failed + 1))
+elif ! grep -q '<h1>' "$tmp_body"; then
+  log "  FAIL showcase SSR check → no <h1> found"
+  failed=$((failed + 1))
+elif ! grep -q 'rel="canonical"' "$tmp_body"; then
+  log "  FAIL showcase SSR check → no canonical link"
+  failed=$((failed + 1))
+else
+  log "  ok   showcase SSR content"
+fi
+
 # ─── Content-specific assertions ────────────────────────────────────────────
 # Spot-check a known page to confirm KaTeX server-side rendering survived
 # the deploy. We pick the first showcase page from the first category.

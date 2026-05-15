@@ -70,9 +70,6 @@ fn main() {
     generate_showcase_concepts(content_dir, out_dir, &page_index, &backlink_index);
     let entries = generate_showcase_pages(content_dir, out_dir, &page_index, &backlink_index);
 
-    // Generate index.html shell
-    generate_index_html();
-
     // SEO surface — sitemap.xml + robots.txt land alongside index.html so
     // `scripts/prerender.sh` copies them into ./dist/ and the Cloudflare
     // Worker's Static Assets binding serves them at the root.
@@ -299,41 +296,6 @@ fn generate_showcase_pages(
     entries
 }
 
-fn generate_index_html() {
-    let site_dir = Path::new("target/site");
-    fs::create_dir_all(site_dir).expect("create site dir");
-
-    let html = r#"<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <link rel="preload" as="style"
-        href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-        crossorigin="anonymous"/>
-    <link rel="stylesheet" href="/pkg/moonmath-app.css"/>
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-        integrity="sha384-nB0miv6/jRmo5RLHM0EW/XZBG00j7eSsxGb4cT/Zmv3h2SQTmSx0bfnoTvkJFh"
-        crossorigin="anonymous"/>
-    <title>MoonMath — Interactive Math Visualization</title>
-</head>
-<body>
-    <script type="module">
-        import init, { hydrate } from '/pkg/moonmath-app.js';
-        async function main() {
-            await init('/pkg/moonmath-app_bg.wasm');
-            hydrate();
-        }
-        main();
-    </script>
-</body>
-</html>"#;
-
-    fs::write(site_dir.join("index.html"), html).expect("write index.html");
-    eprintln!("SSG: wrote index.html");
-}
-
 fn write_json<T: serde::Serialize>(path: &Path, data: &T) {
     let json = serde_json::to_string_pretty(data).expect("serialize JSON");
     fs::write(path, json).expect("write JSON file");
@@ -391,9 +353,15 @@ fn push_sitemap_url(
     priority: &str,
     freq: &str,
 ) {
+    // URLs must include trailing slashes to match the Cloudflare Worker's
+    // html_handling = "auto-trailing-slash" and the canonical URLs emitted
+    // by the SEO component. Without this, crawlers see a mismatch between
+    // the sitemap URL and the canonical/redirect target.
+    let loc = format!("{}{}", base, path);
+    let loc = if loc.ends_with('/') { loc } else { format!("{}/", loc) };
     buf.push_str("  <url>\n");
     buf.push_str("    <loc>");
-    buf.push_str(&xml_escape(&format!("{}{}", base, path)));
+    buf.push_str(&xml_escape(&loc));
     buf.push_str("</loc>\n");
     buf.push_str("    <lastmod>");
     buf.push_str(&xml_escape(last_mod));
