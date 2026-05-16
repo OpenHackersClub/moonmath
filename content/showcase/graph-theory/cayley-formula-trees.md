@@ -1,6 +1,6 @@
 +++
-title = "Cayley's Formula ($n^{n-2}$ trees)"
-description = "The number of labeled spanning trees on n vertices is n^{n-2}, proved by Prüfer sequences."
+title = "Cayley's Formula (nⁿ⁻² trees)"
+description = "The number of labeled spanning trees on n vertices is nⁿ⁻², proved by Prüfer sequences."
 weight = 137
 tags = ["lean4-proof", "graph-theory", "visualization"]
 latex = "T_n = n^{n-2}"
