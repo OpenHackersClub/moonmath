@@ -49,7 +49,14 @@ fn iso_date_from_unix(secs: i64) -> String {
 }
 
 fn main() {
-    let watch = std::env::args().any(|a| a == "--watch");
+    let args: Vec<String> = std::env::args().collect();
+    let watch = args.iter().any(|a| a == "--watch");
+    // `build` is the v0.1.7 SSG-only build path skeleton — it runs the
+    // existing data pipeline, then additionally emits a minimal `dist/`
+    // tree (placeholder shell + sitemap.xml + robots.txt). The plan is to
+    // grow this subcommand into the full route walker that replaces
+    // `scripts/prerender.sh`; today it just proves the wiring.
+    let build = args.iter().any(|a| a == "build" || a == "--build");
 
     let content_dir = Path::new("content");
     let out_dir = Path::new("target/ssg-data");
@@ -80,6 +87,11 @@ fn main() {
 
     eprintln!("SSG: done.");
 
+    if build {
+        let dist_dir = Path::new("dist");
+        emit_dist_skeleton(dist_dir, site_dir, &base);
+    }
+
     if watch {
         let status = std::process::Command::new("cargo")
             .args(["leptos", "watch"])
@@ -87,6 +99,73 @@ fn main() {
             .expect("failed to run cargo leptos watch");
         std::process::exit(status.code().unwrap_or(1));
     }
+}
+
+/// Emit the SSG-only `dist/` skeleton — a placeholder `index.html` plus the
+/// sitemap and robots from `site_dir`. This is the v0.1.7 entry point that
+/// will eventually replace `scripts/prerender.sh` once the route walker is
+/// ported here. For now it is intentionally a stub so the build path can
+/// land in CI alongside the existing SSR + curl prerender flow.
+///
+/// The placeholder body satisfies the same SEO sanity checks as the SSR
+/// prerender (`<h1>` + `<nav>` present) so any downstream smoke test that
+/// asserts non-empty HTML keeps passing once this is wired into CI.
+fn emit_dist_skeleton(dist_dir: &Path, site_dir: &Path, base: &str) {
+    if dist_dir.exists() {
+        fs::remove_dir_all(dist_dir).expect("failed to clean dist dir");
+    }
+    fs::create_dir_all(dist_dir).expect("failed to create dist dir");
+
+    let html = render_placeholder_shell(base);
+    fs::write(dist_dir.join("index.html"), &html).expect("write dist/index.html");
+    eprintln!("SSG-build: wrote dist/index.html ({} bytes)", html.len());
+
+    for name in ["sitemap.xml", "robots.txt"] {
+        let from = site_dir.join(name);
+        if from.exists() {
+            fs::copy(&from, dist_dir.join(name)).expect("copy SEO asset to dist");
+            eprintln!("SSG-build: copied {} → dist/", name);
+        } else {
+            eprintln!("SSG-build: skip {} (missing in site_dir)", name);
+        }
+    }
+
+    eprintln!("SSG-build: done. dist/ is a placeholder — route walker pending.");
+}
+
+/// Build the placeholder HTML shell written to `dist/index.html`. Kept as a
+/// pure function so it's covered by a unit test without touching the
+/// filesystem.
+fn render_placeholder_shell(base: &str) -> String {
+    let canonical = if base.ends_with('/') {
+        format!("{}", base)
+    } else {
+        format!("{}/", base)
+    };
+    format!(
+        concat!(
+            "<!DOCTYPE html>\n",
+            "<html lang=\"en\">\n",
+            "<head>\n",
+            "  <meta charset=\"utf-8\"/>\n",
+            "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n",
+            "  <title>MoonMath — SSG build placeholder</title>\n",
+            "  <link rel=\"canonical\" href=\"{canonical}\"/>\n",
+            "  <meta name=\"robots\" content=\"noindex\"/>\n",
+            "</head>\n",
+            "<body>\n",
+            "  <nav class=\"site-nav\"><a href=\"/\">MoonMath</a></nav>\n",
+            "  <main>\n",
+            "    <h1>MoonMath</h1>\n",
+            "    <p>SSG-only build path placeholder (PRD v0.1.7). ",
+            "Full route rendering pending — production deploys still use ",
+            "<code>scripts/prerender.sh</code>.</p>\n",
+            "  </main>\n",
+            "</body>\n",
+            "</html>\n",
+        ),
+        canonical = canonical,
+    )
 }
 
 fn generate_showcase_categories(content_dir: &Path, out_dir: &Path) {
@@ -447,9 +526,10 @@ fn strip_markdown_lean4_section(html: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        base_url, contains_sorry_keyword, iso_date_from_unix, strip_markdown_lean4_section,
-        xml_escape,
+        base_url, contains_sorry_keyword, emit_dist_skeleton, iso_date_from_unix,
+        render_placeholder_shell, strip_markdown_lean4_section, xml_escape,
     };
+    use std::fs;
 
     #[test]
     fn detects_bare_sorry() {
@@ -512,5 +592,55 @@ mod tests {
         let url = base_url();
         assert!(url.starts_with("http"));
         assert!(!url.ends_with('/'));
+    }
+
+    #[test]
+    fn placeholder_shell_has_seo_required_tags() {
+        // The SSR prerender's sanity check (`scripts/prerender.sh`) refuses
+        // to deploy if `dist/index.html` lacks `<h1>` or `<nav>`. The SSG
+        // build path must clear the same bar so it can drop into CI behind
+        // a flag without breaking the existing guardrails.
+        let html = render_placeholder_shell("https://moonmath.openhackers.club");
+        assert!(html.contains("<h1>"), "missing <h1> in placeholder shell");
+        assert!(html.contains("<nav"), "missing <nav> in placeholder shell");
+        assert!(html.contains("rel=\"canonical\""), "missing canonical link");
+        assert!(html.contains("https://moonmath.openhackers.club/"));
+    }
+
+    #[test]
+    fn placeholder_shell_normalizes_trailing_slash() {
+        let with = render_placeholder_shell("https://example.com/");
+        let without = render_placeholder_shell("https://example.com");
+        // Both should canonicalize to the same trailing-slash URL so the
+        // canonical link matches Cloudflare's auto-trailing-slash handling.
+        assert!(with.contains("https://example.com/"));
+        assert!(without.contains("https://example.com/"));
+    }
+
+    #[test]
+    fn emit_dist_skeleton_writes_index_and_copies_seo_assets() {
+        // Use a unique temp dir so parallel test runs don't trample each
+        // other. Avoid pulling in `tempfile` — std is enough for a smoke.
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let root = std::env::temp_dir().join(format!("moonmath-ssg-smoke-{}", stamp));
+        let dist = root.join("dist");
+        let site = root.join("site");
+        fs::create_dir_all(&site).expect("create site");
+        fs::write(site.join("sitemap.xml"), "<urlset/>").expect("seed sitemap");
+        fs::write(site.join("robots.txt"), "User-agent: *\n").expect("seed robots");
+
+        emit_dist_skeleton(&dist, &site, "https://moonmath.openhackers.club");
+
+        let index = fs::read_to_string(dist.join("index.html"))
+            .expect("dist/index.html should exist after build");
+        assert!(index.contains("<h1>"));
+        assert!(dist.join("sitemap.xml").exists());
+        assert!(dist.join("robots.txt").exists());
+
+        // Cleanup — best effort; the temp dir is harmless if it lingers.
+        let _ = fs::remove_dir_all(&root);
     }
 }
