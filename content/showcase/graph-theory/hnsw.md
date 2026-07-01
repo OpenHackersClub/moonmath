@@ -23,7 +23,11 @@ HNSW combines two ideas:
 - **Navigable small-world (NSW) graphs** — proximity graphs that mix short local links with occasional long-range links, so greedy routing reaches any target in a polylogarithmic number of hops (Kleinberg's small-world result).
 - **Hierarchy by exponential sampling** — separating links into layers by *length scale* removes the polylog factor that plagues a flat NSW graph, turning search into $O(\log N)$.
 
-The interactive figure below builds an index over random 2-D points and animates a query descending the stack. Use **New query point** to fire a fresh search, switch between the **Stack 2.5D** and **Flat layer** views, and step through the walk.
+### Grounding: semantic search
+
+To make the query concrete, the interactive figure below indexes a **toy semantic embedding** — about 28 words placed in four meaning-clusters (*animals, fruits, vehicles, space*) — so nearest-neighbour search means "given a concept, find the closest word". Pick an **example query** like *wolf*, *lime*, or *van* and watch the search greedily descend the layer stack and settle inside the right cluster (a ✓ appears when it lands in the expected neighbourhood). The *drone (boundary)* query sits deliberately between clusters to show the **approximate** nature of the result — the returned point is ringed in gold, and if it differs from the true nearest neighbour that one is ringed with a dashed green circle. Switch the dataset to **Random** for the purely abstract view, toggle **Stack 2.5D** / **Flat layer**, and step through the walk.
+
+This is exactly the motion behind **vector search** and **retrieval-augmented generation (RAG)**: an embedding model turns text into vectors, and HNSW retrieves the nearest stored vectors to a query embedding in logarithmic time instead of scanning the whole corpus.
 
 ## Level assignment
 

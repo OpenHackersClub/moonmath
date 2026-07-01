@@ -13,6 +13,13 @@
 //! software-project the layer stack to a 2.5-D scene drawn with egui's plain 2-D
 //! `Painter`, matching the `ifs_3d` module's approach (no glow/wgpu).
 //!
+//! To *ground* the abstraction, the default dataset is a toy semantic embedding:
+//! ~28 words laid out in four meaning-clusters (animals / fruits / vehicles /
+//! space). A query is then a real concept — "wolf", "lime", "van" — and the
+//! nearest neighbour is a word you can sanity-check, exactly the "semantic
+//! search / RAG" motivation for HNSW. A plain "Random points" dataset is also
+//! available for the abstract view.
+//!
 //! The construction here is deliberately simplified: each layer's graph is the
 //! symmetric `M`-nearest-neighbour graph over that layer's members (`M0 = 2M` at
 //! layer 0), rather than the paper's incremental heuristic insertion. The search
@@ -20,6 +27,7 @@
 
 use eframe::egui;
 use egui::{Align2, Color32, FontId, Pos2, Rect, Sense, Stroke, Vec2};
+use std::f32::consts::TAU;
 
 /// Cap the layer count so the stack stays legible; higher levels are vanishingly
 /// rare for the point counts we use anyway.
@@ -37,6 +45,19 @@ const LAYER_PALETTE: [Color32; 6] = [
 fn layer_color(layer: usize) -> Color32 {
     LAYER_PALETTE[layer.min(LAYER_PALETTE.len() - 1)]
 }
+
+/// One colour per semantic cluster (animals / fruits / vehicles / space).
+const CLUSTER_PALETTE: [Color32; 4] = [
+    Color32::from_rgb(251, 146, 60),  // animals — orange
+    Color32::from_rgb(74, 222, 128),  // fruits — green
+    Color32::from_rgb(56, 189, 248),  // vehicles — sky
+    Color32::from_rgb(196, 181, 253), // space — violet
+];
+
+const CLUSTER_NAMES: [&str; 4] = ["animals", "fruits", "vehicles", "space"];
+
+/// Marks a query that belongs to no single cluster (a boundary case).
+const NO_CLUSTER: usize = usize::MAX;
 
 /// Squared Euclidean distance — we only ever compare distances, so the sqrt is
 /// unnecessary except for display.
@@ -63,10 +84,78 @@ impl Rng {
     }
 }
 
+/// A point handed to the index builder: position, optional label, cluster id.
+#[derive(Clone)]
+struct PointSpec {
+    pos: [f32; 2],
+    label: Option<&'static str>,
+    cluster: usize,
+}
+
 struct Node {
     pos: [f32; 2],
     level: usize,
+    label: Option<&'static str>,
+    cluster: usize,
 }
+
+// ── Datasets ────────────────────────────────────────────────────────────────
+
+#[derive(Clone, Copy, PartialEq)]
+enum Dataset {
+    Words,
+    Random,
+}
+
+/// Toy semantic embedding: four meaning-clusters, each a ring of related words.
+/// Positions are deterministic so the layout is stable across rebuilds.
+fn word_points() -> Vec<PointSpec> {
+    let clusters: [(&[&str], [f32; 2]); 4] = [
+        (&["cat", "dog", "lion", "tiger", "horse", "rabbit", "mouse"], [0.25, 0.27]),
+        (&["apple", "banana", "lemon", "grape", "cherry", "peach", "melon"], [0.75, 0.25]),
+        (&["car", "truck", "bus", "bike", "train", "boat", "plane"], [0.23, 0.74]),
+        (&["star", "moon", "comet", "planet", "galaxy", "nebula", "asteroid"], [0.76, 0.75]),
+    ];
+    let mut rng = Rng(0x0DA7_A5E7);
+    let mut out = Vec::new();
+    for (ci, (words, center)) in clusters.iter().enumerate() {
+        for (wi, w) in words.iter().enumerate() {
+            let ang = (wi as f32) / (words.len() as f32) * TAU + ci as f32 * 0.7;
+            let r = 0.06 + rng.next_f32() * 0.055;
+            out.push(PointSpec {
+                pos: [center[0] + ang.cos() * r, center[1] + ang.sin() * r],
+                label: Some(*w),
+                cluster: ci,
+            });
+        }
+    }
+    out
+}
+
+/// Named example queries over the word dataset. Each is a concept placed near a
+/// cluster (or, for the last one, deliberately between clusters).
+fn example_queries() -> Vec<(&'static str, [f32; 2], usize)> {
+    vec![
+        ("wolf", [0.32, 0.20], 0),
+        ("lime", [0.68, 0.31], 1),
+        ("van", [0.29, 0.68], 2),
+        ("meteor", [0.71, 0.82], 3),
+        ("drone (boundary)", [0.50, 0.52], NO_CLUSTER),
+    ]
+}
+
+fn random_points(n: usize, seed: u64) -> Vec<PointSpec> {
+    let mut rng = Rng(seed | 1);
+    (0..n)
+        .map(|_| PointSpec {
+            pos: [rng.next_f32(), rng.next_f32()],
+            label: None,
+            cluster: 0,
+        })
+        .collect()
+}
+
+// ── Index ───────────────────────────────────────────────────────────────────
 
 /// A built HNSW index over a fixed point set.
 struct Hnsw {
@@ -81,24 +170,25 @@ struct Hnsw {
 }
 
 impl Hnsw {
-    fn build(n: usize, m: usize, ml: f32, seed: u64) -> Self {
-        let mut rng = Rng(seed | 1);
+    /// Build over `points`; `m` is the per-layer degree, `ml` the level
+    /// multiplier, `level_seed` drives the (random) level assignment.
+    fn build(points: &[PointSpec], m: usize, ml: f32, level_seed: u64) -> Self {
+        let mut rng = Rng(level_seed | 1);
 
-        // Random points = the "vectors".
-        let mut nodes: Vec<Node> = (0..n)
-            .map(|_| {
-                let pos = [rng.next_f32(), rng.next_f32()];
+        let mut nodes: Vec<Node> = points
+            .iter()
+            .map(|p| {
                 // level = floor(-ln(u) * mL): geometric decay, exactly as HNSW.
                 let level = (-(rng.next_f32().ln()) * ml).floor() as usize;
                 Node {
-                    pos,
+                    pos: p.pos,
                     level: level.min(MAX_LEVEL_CAP),
+                    label: p.label,
+                    cluster: p.cluster,
                 }
             })
             .collect();
 
-        // Guarantee at least one node sits at every level up to the max so the
-        // stack is never disconnected by an empty middle layer.
         let max_level = nodes.iter().map(|nd| nd.level).max().unwrap_or(0);
         let entry = nodes
             .iter()
@@ -106,18 +196,12 @@ impl Hnsw {
             .max_by_key(|(_, nd)| nd.level)
             .map(|(i, _)| i)
             .unwrap_or(0);
-        // Promote the entry node to span the full stack (it always does, being
-        // the argmax, but make it explicit).
         if !nodes.is_empty() {
             nodes[entry].level = max_level;
         }
 
         let members: Vec<Vec<usize>> = (0..=max_level)
-            .map(|l| {
-                (0..nodes.len())
-                    .filter(|&i| nodes[i].level >= l)
-                    .collect()
-            })
+            .map(|l| (0..nodes.len()).filter(|&i| nodes[i].level >= l).collect())
             .collect();
 
         // Per-layer symmetric kNN graph.
@@ -128,7 +212,6 @@ impl Hnsw {
         for (l, layer_members) in members.iter().enumerate() {
             let degree = if l == 0 { m * 2 } else { m };
             for &i in layer_members {
-                // nearest `degree` other members of this layer
                 let mut cands: Vec<(f32, usize)> = layer_members
                     .iter()
                     .filter(|&&j| j != i)
@@ -139,7 +222,6 @@ impl Hnsw {
                     if !adj[l][i].contains(&j) {
                         adj[l][i].push(j);
                     }
-                    // symmetrise
                     if !adj[l][j].contains(&i) {
                         adj[l][j].push(i);
                     }
@@ -231,7 +313,6 @@ impl Hnsw {
         };
 
         while !candidates.is_empty() {
-            // nearest unexpanded candidate
             let ci = candidates
                 .iter()
                 .enumerate()
@@ -256,7 +337,6 @@ impl Hnsw {
                     candidates.push(e);
                     top.push(e);
                     if top.len() > ef {
-                        // drop the current farthest
                         let fi = top
                             .iter()
                             .enumerate()
@@ -336,14 +416,19 @@ impl Camera {
 }
 
 pub struct HnswApp {
+    // dataset
+    dataset: Dataset,
+    n: usize, // random-dataset size
+    seed: u64,
     // index parameters
-    n: usize,
     m: usize,
     ml: f32,
-    seed: u64,
     // query
     query: [f32; 2],
+    query_label: Option<&'static str>,
+    query_cluster: usize,
     query_seed: u64,
+    preset_idx: usize,
     ef: usize,
     // built state
     index: Hnsw,
@@ -356,6 +441,7 @@ pub struct HnswApp {
     show_edges: bool,
     show_links: bool,
     show_search: bool,
+    show_labels: bool,
     // animation
     playing: bool,
     cursor: usize,
@@ -365,21 +451,24 @@ pub struct HnswApp {
 
 impl Default for HnswApp {
     fn default() -> Self {
-        let n = 120;
         let m = 6;
-        let ml = 0.62;
+        let ml = 0.7;
         let seed = 0x5EED_1234;
-        let query = [0.42, 0.55];
         let ef = 8;
-        let index = Hnsw::build(n, m, ml, seed);
-        let trace = index.search(query, ef);
+        let index = Hnsw::build(&word_points(), m, ml, seed);
+        let (ql, qpos, qc) = example_queries()[0];
+        let trace = index.search(qpos, ef);
         Self {
-            n,
+            dataset: Dataset::Words,
+            n: 120,
+            seed,
             m,
             ml,
-            seed,
-            query,
+            query: qpos,
+            query_label: Some(ql),
+            query_cluster: qc,
             query_seed: 0xA11CE,
+            preset_idx: 0,
             ef,
             index,
             trace,
@@ -394,10 +483,11 @@ impl Default for HnswApp {
             show_edges: true,
             show_links: true,
             show_search: true,
+            show_labels: true,
             playing: true,
             cursor: 0,
             anim_accum: 0.0,
-            step_interval: 0.18,
+            step_interval: 0.28,
         }
     }
 }
@@ -407,8 +497,17 @@ impl HnswApp {
         Self::default()
     }
 
+    fn current_points(&self) -> Vec<PointSpec> {
+        match self.dataset {
+            Dataset::Words => word_points(),
+            Dataset::Random => random_points(self.n, self.seed),
+        }
+    }
+
     fn rebuild_index(&mut self) {
-        self.index = Hnsw::build(self.n, self.m, self.ml, self.seed);
+        let pts = self.current_points();
+        let level_seed = self.seed ^ 0x9E37_79B9;
+        self.index = Hnsw::build(&pts, self.m, self.ml, level_seed);
         self.flat_layer = self.flat_layer.min(self.index.max_level);
         self.recompute_trace();
     }
@@ -420,12 +519,35 @@ impl HnswApp {
         self.playing = true;
     }
 
-    fn new_query(&mut self) {
+    fn apply_preset(&mut self, i: usize) {
+        let presets = example_queries();
+        let (label, pos, cluster) = presets[i % presets.len()];
+        self.preset_idx = i % presets.len();
+        self.query = pos;
+        self.query_label = Some(label);
+        self.query_cluster = cluster;
+        self.recompute_trace();
+    }
+
+    fn random_query(&mut self) {
         let mut rng = Rng(self.query_seed | 1);
-        // advance the seed so each click yields a fresh point
         self.query_seed = self.query_seed.wrapping_mul(6364136223846793005).wrapping_add(1);
         self.query = [rng.next_f32(), rng.next_f32()];
+        self.query_label = None;
+        self.query_cluster = NO_CLUSTER;
         self.recompute_trace();
+    }
+
+    fn switch_dataset(&mut self, ds: Dataset) {
+        if self.dataset == ds {
+            return;
+        }
+        self.dataset = ds;
+        self.rebuild_index();
+        match ds {
+            Dataset::Words => self.apply_preset(self.preset_idx),
+            Dataset::Random => self.random_query(),
+        }
     }
 }
 
@@ -436,7 +558,7 @@ impl eframe::App for HnswApp {
 
         egui::SidePanel::right("hnsw_controls")
             .resizable(false)
-            .default_width(248.0)
+            .default_width(252.0)
             .show(ctx, |ui| {
                 ui.heading("HNSW — ANN search");
                 ui.label(
@@ -446,13 +568,53 @@ impl eframe::App for HnswApp {
                 );
                 ui.separator();
 
-                ui.label("Index");
+                ui.label("Dataset");
                 ui.horizontal(|ui| {
-                    ui.label("Points N");
-                    if ui.add(egui::Slider::new(&mut self.n, 20..=240)).changed() {
-                        index_dirty = true;
+                    if ui
+                        .selectable_label(self.dataset == Dataset::Words, "Words (semantic)")
+                        .clicked()
+                    {
+                        self.switch_dataset(Dataset::Words);
+                    }
+                    if ui
+                        .selectable_label(self.dataset == Dataset::Random, "Random")
+                        .clicked()
+                    {
+                        self.switch_dataset(Dataset::Random);
                     }
                 });
+
+                if self.dataset == Dataset::Words {
+                    ui.label(
+                        egui::RichText::new("Example queries — find the nearest word:")
+                            .small()
+                            .weak(),
+                    );
+                    let presets = example_queries();
+                    ui.horizontal_wrapped(|ui| {
+                        for (i, (label, _, _)) in presets.iter().enumerate() {
+                            if ui
+                                .selectable_label(self.preset_idx == i, *label)
+                                .clicked()
+                            {
+                                self.apply_preset(i);
+                            }
+                        }
+                    });
+                } else {
+                    ui.horizontal(|ui| {
+                        ui.label("Points N");
+                        if ui.add(egui::Slider::new(&mut self.n, 20..=240)).changed() {
+                            index_dirty = true;
+                        }
+                    });
+                    if ui.button("New random query").clicked() {
+                        self.random_query();
+                    }
+                }
+
+                ui.separator();
+                ui.label("Index");
                 ui.horizontal(|ui| {
                     ui.label("Neighbours M");
                     if ui.add(egui::Slider::new(&mut self.m, 2..=16)).changed() {
@@ -461,43 +623,30 @@ impl eframe::App for HnswApp {
                 });
                 ui.horizontal(|ui| {
                     ui.label("Level mult mL");
-                    if ui
-                        .add(egui::Slider::new(&mut self.ml, 0.2..=1.6))
-                        .changed()
-                    {
+                    if ui.add(egui::Slider::new(&mut self.ml, 0.2..=1.6)).changed() {
                         index_dirty = true;
                     }
                 });
-                ui.label(
-                    egui::RichText::new("level = ⌊-ln(u)·mL⌋   ·   heuristic mL = 1/ln(M)")
-                        .small()
-                        .weak(),
-                );
-                if ui.button("Rebuild (reseed)").clicked() {
-                    self.seed = self.seed.wrapping_mul(6364136223846793005).wrapping_add(1);
-                    index_dirty = true;
-                }
-                ui.label(
-                    egui::RichText::new(format!(
-                        "layers: {}   ·   entry node #{}",
-                        self.index.max_level + 1,
-                        self.index.entry
-                    ))
-                    .small()
-                    .weak(),
-                );
-
-                ui.separator();
-                ui.label("Query");
                 ui.horizontal(|ui| {
                     ui.label("Beam ef");
                     if ui.add(egui::Slider::new(&mut self.ef, 1..=32)).changed() {
                         query_dirty = true;
                     }
                 });
-                if ui.button("New query point").clicked() {
-                    self.new_query();
+                if ui.button("Rebuild (reshuffle layers)").clicked() {
+                    self.seed = self.seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+                    index_dirty = true;
                 }
+                ui.label(
+                    egui::RichText::new(format!(
+                        "{} points · {} layers · entry #{}",
+                        self.index.nodes.len(),
+                        self.index.max_level + 1,
+                        self.index.entry
+                    ))
+                    .small()
+                    .weak(),
+                );
 
                 ui.separator();
                 ui.label("Search replay");
@@ -527,12 +676,8 @@ impl eframe::App for HnswApp {
                         .logarithmic(true),
                 );
                 ui.label(
-                    egui::RichText::new(format!(
-                        "step {} / {}",
-                        self.cursor,
-                        self.trace.steps.len()
-                    ))
-                    .small(),
+                    egui::RichText::new(format!("step {} / {}", self.cursor, self.trace.steps.len()))
+                        .small(),
                 );
 
                 ui.separator();
@@ -547,16 +692,15 @@ impl eframe::App for HnswApp {
                             .text("layer"),
                     );
                 } else {
-                    ui.add(
-                        egui::Slider::new(&mut self.layer_spacing, 0.25..=1.2).text("layer gap"),
-                    );
-                    ui.add(
-                        egui::Slider::new(&mut self.camera.distance, 1.8..=7.0).text("zoom"),
-                    );
+                    ui.add(egui::Slider::new(&mut self.layer_spacing, 0.25..=1.2).text("layer gap"));
+                    ui.add(egui::Slider::new(&mut self.camera.distance, 1.8..=7.0).text("zoom"));
                 }
                 ui.checkbox(&mut self.show_edges, "show edges");
                 if self.view == ViewMode::Stack {
                     ui.checkbox(&mut self.show_links, "show layer links");
+                }
+                if self.dataset == Dataset::Words {
+                    ui.checkbox(&mut self.show_labels, "show labels");
                 }
                 ui.checkbox(&mut self.show_search, "show search path");
 
@@ -572,17 +716,9 @@ impl eframe::App for HnswApp {
                     .small(),
                 );
                 if self.cursor >= self.trace.steps.len() {
-                    if exact {
-                        ui.colored_label(
-                            Color32::from_rgb(52, 211, 153),
-                            "✓ found the exact nearest neighbour",
-                        );
-                    } else {
-                        ui.colored_label(
-                            Color32::from_rgb(251, 191, 36),
-                            "≈ approximate result (ring = found, dashed = true NN)",
-                        );
-                    }
+                    self.result_readout(ui, exact);
+                } else if let Some(q) = self.query_label {
+                    ui.label(egui::RichText::new(format!("searching for \u{201c}{q}\u{201d}\u{2026}")).small());
                 }
             });
 
@@ -591,7 +727,6 @@ impl eframe::App for HnswApp {
             let rect = response.rect;
             painter.rect_filled(rect, 4.0, Color32::from_rgb(18, 20, 26));
 
-            // Orbit / zoom (stack view only).
             if self.view == ViewMode::Stack {
                 if response.dragged() {
                     let drag = response.drag_delta();
@@ -622,7 +757,6 @@ impl eframe::App for HnswApp {
             );
         });
 
-        // Advance the replay.
         if index_dirty {
             self.rebuild_index();
         } else if query_dirty {
@@ -644,6 +778,41 @@ impl eframe::App for HnswApp {
 }
 
 impl HnswApp {
+    fn result_readout(&self, ui: &mut egui::Ui, exact: bool) {
+        let result_label = self.index.nodes[self.trace.result].label;
+        let result_cluster = self.index.nodes[self.trace.result].cluster;
+        if let (Some(q), Some(r)) = (self.query_label, result_label) {
+            ui.label(
+                egui::RichText::new(format!("\u{201c}{q}\u{201d}  \u{2192}  nearest: \u{201c}{r}\u{201d}"))
+                    .strong(),
+            );
+            if self.query_cluster == NO_CLUSTER {
+                ui.colored_label(
+                    Color32::from_rgb(148, 163, 184),
+                    format!("boundary query — landed in {}", CLUSTER_NAMES[result_cluster]),
+                );
+            } else if result_cluster == self.query_cluster {
+                ui.colored_label(
+                    Color32::from_rgb(52, 211, 153),
+                    format!("\u{2713} right neighbourhood ({})", CLUSTER_NAMES[result_cluster]),
+                );
+            } else {
+                ui.colored_label(
+                    Color32::from_rgb(248, 113, 113),
+                    format!("\u{2717} landed in {}", CLUSTER_NAMES[result_cluster]),
+                );
+            }
+        }
+        if exact {
+            ui.colored_label(Color32::from_rgb(52, 211, 153), "\u{2713} exact nearest neighbour");
+        } else {
+            ui.colored_label(
+                Color32::from_rgb(251, 191, 36),
+                "\u{2248} approximate (ring = found, dashed = true NN)",
+            );
+        }
+    }
+
     fn revealed(&self) -> &[SearchStep] {
         let k = self.cursor.min(self.trace.steps.len());
         &self.trace.steps[..k]
@@ -659,17 +828,14 @@ impl HnswApp {
             )
         };
 
-        // Draw bottom-to-top so upper layers paint over lower ones.
         for l in 0..=max_level {
             let color = layer_color(l);
-            // Layer plane border.
             let corners = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
             let proj: Vec<Pos2> = corners.iter().map(|&c| project(c, l)).collect();
             let plane_stroke = Stroke::new(1.0, Color32::from_rgba_unmultiplied(120, 130, 150, 60));
             for i in 0..4 {
                 painter.line_segment([proj[i], proj[(i + 1) % 4]], plane_stroke);
             }
-            // Layer caption.
             painter.text(
                 project([1.0, 0.0], l) + Vec2::new(6.0, 0.0),
                 Align2::LEFT_CENTER,
@@ -678,7 +844,6 @@ impl HnswApp {
                 color,
             );
 
-            // Edges.
             if self.show_edges {
                 let edge_stroke = Stroke::new(
                     0.7,
@@ -695,49 +860,51 @@ impl HnswApp {
                 }
             }
 
-            // Nodes.
             for &i in &self.index.members[l] {
                 let p = project(self.index.nodes[i].pos, l);
                 painter.circle_filled(p, 2.4, color);
             }
         }
 
-        // Vertical links connecting a node across the layers it lives in.
         if self.show_links {
-            let link_stroke =
-                Stroke::new(0.8, Color32::from_rgba_unmultiplied(160, 170, 190, 70));
-            for (i, nd) in self.index.nodes.iter().enumerate() {
+            let link_stroke = Stroke::new(0.8, Color32::from_rgba_unmultiplied(160, 170, 190, 70));
+            for nd in self.index.nodes.iter() {
                 if nd.level == 0 {
                     continue;
                 }
                 for l in 0..nd.level {
-                    let a = project(nd.pos, l);
-                    let b = project(nd.pos, l + 1);
-                    painter.line_segment([a, b], link_stroke);
-                    let _ = i;
+                    painter.line_segment([project(nd.pos, l), project(nd.pos, l + 1)], link_stroke);
                 }
             }
         }
 
         if self.show_search {
             let steps = self.revealed();
-            // Walk path through the stack.
             let path_stroke = Stroke::new(2.2, Color32::from_rgb(255, 255, 255));
             for w in steps.windows(2) {
                 let a = project(self.index.nodes[w[0].node].pos, w[0].layer);
                 let b = project(self.index.nodes[w[1].node].pos, w[1].layer);
                 painter.line_segment([a, b], path_stroke);
             }
-            // Visited nodes emphasised.
             for s in steps {
                 let p = project(self.index.nodes[s.node].pos, s.layer);
                 painter.circle_filled(p, 3.4, Color32::from_rgb(255, 255, 255));
             }
-            // Current node ring.
             if let Some(s) = steps.last() {
                 let p = project(self.index.nodes[s.node].pos, s.layer);
                 painter.circle_stroke(p, 6.0, Stroke::new(2.0, Color32::from_rgb(56, 189, 248)));
-                // Query marker at the current search layer + a faint full-height guide.
+                // label the current node in the words dataset
+                if self.dataset == Dataset::Words && self.show_labels {
+                    if let Some(lbl) = self.index.nodes[s.node].label {
+                        painter.text(
+                            p + Vec2::new(8.0, -8.0),
+                            Align2::LEFT_BOTTOM,
+                            lbl,
+                            FontId::proportional(12.0),
+                            Color32::from_rgb(226, 232, 240),
+                        );
+                    }
+                }
                 let q_top = project(self.trace.query, max_level);
                 let q_bot = project(self.trace.query, 0);
                 painter.line_segment(
@@ -746,11 +913,30 @@ impl HnswApp {
                 );
                 let q = project(self.trace.query, s.layer);
                 draw_diamond(painter, q, 5.0, Color32::from_rgb(236, 72, 153));
+                if let Some(ql) = self.query_label {
+                    painter.text(
+                        q + Vec2::new(8.0, 6.0),
+                        Align2::LEFT_TOP,
+                        format!("? {ql}"),
+                        FontId::proportional(12.0),
+                        Color32::from_rgb(244, 114, 182),
+                    );
+                }
             }
-            // Result + true NN rings once the walk completes.
             if self.cursor >= self.trace.steps.len() {
                 let r = project(self.index.nodes[self.trace.result].pos, 0);
                 painter.circle_stroke(r, 7.5, Stroke::new(2.4, Color32::from_rgb(250, 204, 21)));
+                if self.dataset == Dataset::Words && self.show_labels {
+                    if let Some(lbl) = self.index.nodes[self.trace.result].label {
+                        painter.text(
+                            r + Vec2::new(9.0, 0.0),
+                            Align2::LEFT_CENTER,
+                            lbl,
+                            FontId::proportional(12.0),
+                            Color32::from_rgb(250, 204, 21),
+                        );
+                    }
+                }
                 if self.trace.true_nn != self.trace.result {
                     let t = project(self.index.nodes[self.trace.true_nn].pos, 0);
                     draw_dashed_ring(painter, t, 7.5, Color32::from_rgb(52, 211, 153));
@@ -762,16 +948,12 @@ impl HnswApp {
     fn draw_flat(&self, painter: &egui::Painter, rect: Rect) {
         let l = self.flat_layer.min(self.index.max_level);
         let color = layer_color(l);
-        let pad = 28.0;
-        let area = Rect::from_min_max(
-            rect.min + Vec2::new(pad, pad),
-            rect.max - Vec2::new(pad, pad),
-        );
+        let pad = 30.0;
+        let area = Rect::from_min_max(rect.min + Vec2::new(pad, pad), rect.max - Vec2::new(pad, pad));
         let side = area.size().min_elem();
         let origin = area.center() - Vec2::new(side, side) * 0.5;
         let map = |q: [f32; 2]| -> Pos2 { origin + Vec2::new(q[0] * side, (1.0 - q[1]) * side) };
 
-        // Frame.
         painter.rect_stroke(
             Rect::from_min_size(origin, Vec2::splat(side)),
             2.0,
@@ -791,10 +973,8 @@ impl HnswApp {
         );
 
         if self.show_edges {
-            let edge_stroke = Stroke::new(
-                0.8,
-                Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 70),
-            );
+            let edge_stroke =
+                Stroke::new(0.8, Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), 70));
             for &i in &self.index.members[l] {
                 let pi = map(self.index.nodes[i].pos);
                 for &j in &self.index.adj[l][i] {
@@ -804,13 +984,27 @@ impl HnswApp {
                 }
             }
         }
+
+        let show_labels = self.dataset == Dataset::Words && self.show_labels;
         for &i in &self.index.members[l] {
-            painter.circle_filled(map(self.index.nodes[i].pos), 3.0, color);
+            let p = map(self.index.nodes[i].pos);
+            painter.circle_filled(p, 3.0, color);
+            if show_labels {
+                if let Some(lbl) = self.index.nodes[i].label {
+                    let tint = CLUSTER_PALETTE[self.index.nodes[i].cluster % CLUSTER_PALETTE.len()];
+                    painter.text(
+                        p + Vec2::new(5.0, 0.0),
+                        Align2::LEFT_CENTER,
+                        lbl,
+                        FontId::proportional(11.0),
+                        Color32::from_rgba_unmultiplied(tint.r(), tint.g(), tint.b(), 210),
+                    );
+                }
+            }
         }
 
         if self.show_search {
-            let steps: Vec<&SearchStep> =
-                self.revealed().iter().filter(|s| s.layer == l).collect();
+            let steps: Vec<&SearchStep> = self.revealed().iter().filter(|s| s.layer == l).collect();
             let path_stroke = Stroke::new(2.0, Color32::from_rgb(255, 255, 255));
             for w in steps.windows(2) {
                 painter.line_segment(
@@ -822,11 +1016,7 @@ impl HnswApp {
                 );
             }
             for s in &steps {
-                painter.circle_filled(
-                    map(self.index.nodes[s.node].pos),
-                    4.2,
-                    Color32::from_rgb(255, 255, 255),
-                );
+                painter.circle_filled(map(self.index.nodes[s.node].pos), 4.2, Color32::from_rgb(255, 255, 255));
             }
             if let Some(s) = self.revealed().last() {
                 if s.layer == l {
@@ -837,9 +1027,18 @@ impl HnswApp {
                     );
                 }
             }
-            // Query marker.
-            draw_diamond(painter, map(self.trace.query), 6.0, Color32::from_rgb(236, 72, 153));
-            // Result / true NN on layer 0.
+            // Query marker + label.
+            let qp = map(self.trace.query);
+            draw_diamond(painter, qp, 6.0, Color32::from_rgb(236, 72, 153));
+            if let Some(ql) = self.query_label {
+                painter.text(
+                    qp + Vec2::new(9.0, -9.0),
+                    Align2::LEFT_BOTTOM,
+                    format!("? {ql}"),
+                    FontId::proportional(13.0),
+                    Color32::from_rgb(244, 114, 182),
+                );
+            }
             if l == 0 && self.cursor >= self.trace.steps.len() {
                 painter.circle_stroke(
                     map(self.index.nodes[self.trace.result].pos),
@@ -879,8 +1078,8 @@ fn draw_dashed_ring(painter: &egui::Painter, c: Pos2, r: f32, color: Color32) {
         if k % 2 != 0 {
             continue;
         }
-        let a0 = (k as f32) / (segments as f32) * std::f32::consts::TAU;
-        let a1 = (k as f32 + 1.0) / (segments as f32) * std::f32::consts::TAU;
+        let a0 = (k as f32) / (segments as f32) * TAU;
+        let a1 = (k as f32 + 1.0) / (segments as f32) * TAU;
         painter.line_segment(
             [
                 c + Vec2::new(a0.cos() * r, a0.sin() * r),

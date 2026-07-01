@@ -27,11 +27,13 @@ pub fn HnswCanvas() -> impl IntoView {
         <section class="hnsw-section">
             <h2>"Interactive HNSW Search"</h2>
             <p class="hnsw-subtitle">
-                "Each point is a vector in the unit square. Higher layers keep an \
-                 exponentially thinner sample for long-range hops; layer 0 holds every \
-                 point for fine search. Hit "<strong>"New query point"</strong>" and watch \
-                 the search greedily descend the stack to the nearest neighbour. Drag to \
-                 orbit, scroll to zoom."
+                "A toy semantic dataset: ~28 words laid out in four meaning-clusters \
+                 (animals, fruits, vehicles, space). Pick an example query — "
+                <strong>"wolf"</strong>", "<strong>"lime"</strong>", "<strong>"van"</strong>" — and \
+                 watch the search greedily descend the layer stack and land on the nearest \
+                 word. Higher layers keep a thinner sample for long-range hops; layer 0 holds \
+                 every point for fine search. Switch to "<strong>"Random"</strong>" for the \
+                 abstract view; drag to orbit, scroll to zoom."
             </p>
             <div class="hnsw-frame">
                 <canvas
