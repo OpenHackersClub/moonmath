@@ -5,6 +5,7 @@ use leptos_router::hooks::use_params_map;
 use crate::components::breadcrumbs::{Breadcrumbs, Crumb};
 use crate::components::compile_panel::CompilePanel;
 use crate::components::fractal_canvas::FractalVisualizations;
+use crate::components::gcm_canvas::GcmCanvas;
 use crate::components::hnsw_canvas::HnswCanvas;
 use crate::components::ifs_canvas::Ifs3dCanvas;
 use crate::components::seo::ArticleMeta;
@@ -63,6 +64,7 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
                             && data.tags.iter().any(|t| t == "visualization");
                         let has_ifs_3d = data.tags.iter().any(|t| t == "ifs-3d");
                         let has_hnsw = data.tags.iter().any(|t| t == "hnsw");
+                        let has_gcm = data.tags.iter().any(|t| t == "gcm");
                         let seo_tags = data.tags.clone();
                         let seo_description = if data.description.is_empty() {
                             format!(
@@ -130,6 +132,9 @@ pub fn ShowcaseDetailPage() -> impl IntoView {
 
                                 // HNSW search scene (egui+eframe), gated on the `hnsw` tag
                                 {has_hnsw.then(|| view! { <HnswCanvas/> })}
+
+                                // AES-128-GCM scene (egui+eframe), gated on the `gcm` tag
+                                {has_gcm.then(|| view! { <GcmCanvas/> })}
 
                                 // Lean4 code blocks (interactive with compile button)
                                 {(!lean4_blocks.is_empty()).then(|| {
