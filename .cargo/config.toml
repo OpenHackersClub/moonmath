@@ -1,3 +1,7 @@
 [alias]
 dev = "run -p moonmath-ssg -- --watch"
 ssg = "run -p moonmath-ssg"
+# `cargo ssg-build` runs the data pipeline AND emits the SSG-only `dist/`
+# skeleton (PRD v0.1.7). It runs alongside `scripts/prerender.sh` today; the
+# script will be retired once the route walker lands in moonmath-ssg.
+ssg-build = "run -p moonmath-ssg -- build"

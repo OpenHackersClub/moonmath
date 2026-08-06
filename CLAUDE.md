@@ -13,6 +13,10 @@ cargo dev
 # Or run SSG alone to regenerate showcase data
 cargo ssg
 
+# SSG-only build path skeleton (PRD v0.1.7) — data + dist/index.html stub.
+# Runs alongside scripts/prerender.sh today; route walker is the follow-up.
+cargo ssg-build
+
 # Check SSR build (server)
 cargo check --features ssr -p moonmath-app
 
